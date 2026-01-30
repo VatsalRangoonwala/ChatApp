@@ -29,8 +29,8 @@ app.get("/", (req, res) => {
 });
 
 // Socket Logic
-// import socketHandler from "./sockets/socket.js";
-// socketHandler(io);
+import socketHandler from "./sockets/socket.js";
+socketHandler(io);
 
 const PORT = process.env.PORT;
 
