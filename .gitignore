@@ -1,0 +1,88 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ============================
+# NODE MODULES
+# ============================
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# ============================
+# ENV FILES (SECRETS)
+# ============================
+.env
+server/.env
+client/.env
+
+# ============================
+# BUILD FOLDERS
+# ============================
+client/dist/
+server/dist/
+build/
+
+# ============================
+# LOG FILES
+# ============================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================
+# OS FILES
+# ============================
+.DS_Store
+Thumbs.db
+
+# ============================
+# EDITOR FILES
+# ============================
+.vscode/
+.idea/
+
+# ============================
+# CACHE
+# ============================
+.cache
+.eslintcache
+
+# ============================
+# TEMP FILES
+# ============================
+*.log
+*.tmp
+
+# ============================
+# ENV BACKUP FILES
+# ============================
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+client/package-lock.json
+server/package-lock.json
+package-lock.json
