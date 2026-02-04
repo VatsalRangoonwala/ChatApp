@@ -7,6 +7,7 @@ import { Server } from "socket.io";
 import connectDB from "./config/db.js";
 import authRouter from "./routes/auth.route.js";
 import chatRouter from "./routes/chat.route.js";
+import msgRouter from "./routes/message.route.js";
 
 dotenv.config();
 connectDB();
@@ -26,6 +27,8 @@ app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/message", msgRouter);
+
 
 // Socket Logic
 // import socketHandler from "./sockets/socket.js";
