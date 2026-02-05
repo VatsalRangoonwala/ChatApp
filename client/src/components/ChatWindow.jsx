@@ -1,9 +1,12 @@
 import { useChat } from "../context/ChatContext";
+import { useAuth } from "../context/AuthContext";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
 
 export default function ChatWindow() {
-  const { activeChat, messages } = useChat();
+  const { activeChat, messages, isTyping } = useChat();
+  const { user } = useAuth();
+  const otherUser = activeChat?.participants?.find((p) => p._id !== user._id);
 
   if (!activeChat) {
     return (
@@ -15,15 +18,20 @@ export default function ChatWindow() {
 
   return (
     <div className="flex flex-col flex-1">
-      <div className="p-4 border-b font-bold">
-        Chat
+      <div className="p-4 border-b">
+        <p className="font-bold">{otherUser.name}</p>
+        <p className="text-sm text-gray-500">
+          {otherUser.isOnline ? "Online" : "Offline"}
+        </p>
       </div>
+
 
       <div className="flex-1 p-4 overflow-y-auto">
         {messages.map((msg) => (
           <MessageBubble key={msg._id} message={msg} />
         ))}
       </div>
+        {isTyping && <p className="text-sm text-gray-400 px-4 py-1">typing...</p>}
 
       <ChatInput />
     </div>

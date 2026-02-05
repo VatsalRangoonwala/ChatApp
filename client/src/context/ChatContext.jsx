@@ -12,6 +12,8 @@ export const ChatProvider = ({ children }) => {
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [unread, setUnread] = useState({});
 
   // Fetch chats
   useEffect(() => {
@@ -27,10 +29,31 @@ export const ChatProvider = ({ children }) => {
     socket.on("receive-message", (message) => {
       if (activeChat?._id === message.chatId) {
         setMessages((prev) => [...prev, message]);
+      } else {
+        setUnread((prev) => ({
+          ...prev,
+          [message.chatId]: (prev[message.chatId] || 0) + 1,
+        }));
       }
     });
 
-    return () => socket.off("receive-message");
+    socket.on("typing", () => setIsTyping(true));
+    socket.on("stop-typing", () => setIsTyping(false));
+
+    socket.on("message-seen", ({ messageId }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === messageId ? { ...msg, status: "seen" } : msg,
+        ),
+      );
+    });
+    console.log(isTyping);
+
+    return () => {
+      socket.off("typing");
+      socket.off("stop-typing");
+      socket.off("receive-message");
+    };
   }, [socket, activeChat]);
 
   // Fetch messages
@@ -38,15 +61,25 @@ export const ChatProvider = ({ children }) => {
     setActiveChat(chat);
     const { data } = await api.get(`/message/${chat._id}`);
     setMessages(data);
+    data.forEach((msg) => {
+      if (msg.sender._id !== user._id && msg.status !== "seen") {
+        socket.emit("message-seen", {
+          messageId: msg._id,
+          senderId: msg.sender._id,
+        });
+      }
+    });
+    setUnread((prev) => ({
+      ...prev,
+      [chat._id]: 0,
+    }));
   };
 
   // Send message
   const sendMessage = async (text) => {
     if (!text || !activeChat) return;
 
-    const receiver = activeChat.participants.find(
-      (p) => p._id !== user._id
-    );
+    const receiver = activeChat.participants.find((p) => p._id !== user._id);
 
     const { data } = await api.post("/message", {
       chatId: activeChat._id,
@@ -62,14 +95,28 @@ export const ChatProvider = ({ children }) => {
     });
   };
 
+  // Expose typing emitters
+
+  const startTyping = (receiverId) => {
+    socket.emit("typing", { receiverId });
+  };
+
+  const stopTyping = (receiverId) => {
+    socket.emit("stop-typing", { receiverId });
+  };
+
   return (
     <ChatContext.Provider
       value={{
         chats,
         activeChat,
         messages,
+        isTyping,
+        unread,
         openChat,
         sendMessage,
+        startTyping,
+        stopTyping,
       }}
     >
       {children}

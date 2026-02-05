@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useChat } from "../context/ChatContext";
-
+import { useAuth } from "../context/AuthContext";
 export default function ChatInput() {
   const [text, setText] = useState("");
-  const { sendMessage } = useChat();
+  const { sendMessage, activeChat, startTyping, stopTyping } = useChat();
+  const typingRef = useRef(null);
+  const { user } = useAuth();
 
   const submitHandler = (e) => {
     e.preventDefault();
@@ -17,11 +19,22 @@ export default function ChatInput() {
         className="flex-1 border p-2 rounded"
         placeholder="Type a message..."
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value);
+
+          const receiver = activeChat.participants.find(
+            (p) => p._id !== user._id,
+          );
+
+          startTyping(receiver._id);
+
+          clearTimeout(typingRef.current);
+          typingRef.current = setTimeout(() => {
+            stopTyping(receiver._id);
+          }, 800);
+        }}
       />
-      <button className="ml-2 bg-blue-600 text-white px-4 rounded">
-        Send
-      </button>
+      <button className="ml-2 bg-blue-600 text-white px-4 rounded">Send</button>
     </form>
   );
 }
