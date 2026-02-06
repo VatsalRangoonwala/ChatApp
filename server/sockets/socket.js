@@ -24,6 +24,8 @@ const socketHandler = (io) => {
 
     onlineUsers.set(userId, socket.id);
     await User.findByIdAndUpdate(userId, { isOnline: true });
+    socket.broadcast.emit("user-online", userId);
+
 
     console.log("User connected:", userId);
 
@@ -72,6 +74,7 @@ const socketHandler = (io) => {
     socket.on("disconnect", async () => {
       onlineUsers.delete(userId);
       await User.findByIdAndUpdate(userId, { isOnline: false });
+      socket.broadcast.emit("user-offline", userId);
       console.log("User disconnected:", userId);
     });
   });

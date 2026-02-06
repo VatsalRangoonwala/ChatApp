@@ -31,7 +31,7 @@ export default function ChatWindow() {
           <MessageBubble key={msg._id} message={msg} />
         ))}
       </div>
-        {isTyping && <p className="text-sm text-gray-400 px-4 py-1">typing...</p>}
+        {isTyping && <p className="text-sm text-gray-400 px-4 py-1 animate-pulse">typing...</p>}
 
       <ChatInput />
     </div>

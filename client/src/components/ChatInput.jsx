@@ -11,6 +11,7 @@ export default function ChatInput() {
     e.preventDefault();
     sendMessage(text);
     setText("");
+    stopTyping(receiver._id);
   };
 
   return (
@@ -26,7 +27,9 @@ export default function ChatInput() {
             (p) => p._id !== user._id,
           );
 
-          startTyping(receiver._id);
+          if (e.target.value.trim().length > 0) {
+            startTyping(receiver._id);
+          }
 
           clearTimeout(typingRef.current);
           typingRef.current = setTimeout(() => {

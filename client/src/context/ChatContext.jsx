@@ -26,6 +26,30 @@ export const ChatProvider = ({ children }) => {
   useEffect(() => {
     if (!socket) return;
 
+    socket.on("user-online", (userId) => {
+      // update sidebar chats
+      setChats((prev) =>
+        prev.map((chat) => ({
+          ...chat,
+          participants: chat.participants.map((p) =>
+            p._id === userId ? { ...p, isOnline: true } : p,
+          ),
+        })),
+      );
+
+      // update active chat
+      setActiveChat((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          participants: prev.participants.map((p) =>
+            p._id === userId ? { ...p, isOnline: true } : p,
+          ),
+        };
+      });
+    });
+
     socket.on("receive-message", (message) => {
       if (activeChat?._id === message.chatId) {
         setMessages((prev) => [...prev, message]);
@@ -47,12 +71,35 @@ export const ChatProvider = ({ children }) => {
         ),
       );
     });
-    console.log(isTyping);
+
+    socket.on("user-offline", (userId) => {
+      setChats((prev) =>
+        prev.map((chat) => ({
+          ...chat,
+          participants: chat.participants.map((p) =>
+            p._id === userId ? { ...p, isOnline: false } : p,
+          ),
+        })),
+      );
+
+      setActiveChat((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          participants: prev.participants.map((p) =>
+            p._id === userId ? { ...p, isOnline: false } : p,
+          ),
+        };
+      });
+    });
 
     return () => {
       socket.off("typing");
       socket.off("stop-typing");
       socket.off("receive-message");
+      socket.off("user-online");
+      socket.off("user-offline");
     };
   }, [socket, activeChat]);
 
