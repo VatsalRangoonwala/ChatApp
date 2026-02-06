@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
+
 export default function ChatInput() {
   const [text, setText] = useState("");
   const { sendMessage, activeChat, startTyping, stopTyping } = useChat();
   const typingRef = useRef(null);
   const { user } = useAuth();
+  const receiver = activeChat.participants.find((p) => p._id !== user._id);
 
   const submitHandler = (e) => {
     e.preventDefault();
