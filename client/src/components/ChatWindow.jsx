@@ -1,39 +1,82 @@
 import { useEffect, useRef } from "react";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
+import { useSocket } from "../context/SocketContext";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
 
 export default function ChatWindow() {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
-  const { activeChat, messages, isTyping } = useChat();
+  const { activeChat, messages, isTyping, loadOlderMessages } = useChat();
   const { user } = useAuth();
+  const { socket } = useSocket();
   const otherUser = activeChat?.participants?.find((p) => p._id !== user._id);
+  const isInitialLoad = useRef(true);
+
+  useEffect(() => {
+    isInitialLoad.current = true;
+  }, [activeChat?._id]);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
-    if (!container) return;
+    if (!container || messages.length === 0) return;
+
+    if (isInitialLoad.current) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "auto",
+      });
+
+      isInitialLoad.current = false;
+      return;
+    }
+
+    const lastMessage = messages[messages.length - 1];
+
+    // auto scroll only if near bottom
+    if (isUserNearBottom()) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: "smooth",
+      });
+
+      // ✅ mark seen
+      if (
+        lastMessage.sender._id !== user._id &&
+        lastMessage.status !== "seen"
+      ) {
+        socket.emit("message-seen", {
+          messageId: lastMessage._id,
+          senderId: lastMessage.sender._id,
+        });
+      }
+    }
+  }, [messages]);
+
+  const isUserNearBottom = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return false;
 
     const distanceFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
 
-    // only auto scroll if user near bottom
-    if (distanceFromBottom < 100) {
-      messagesEndRef.current?.scrollIntoView({
-        behavior: "smooth",
-      });
-    }
-  }, [messages]);
+    return distanceFromBottom < 100;
+  };
 
   const handleScroll = async () => {
-  const container = messagesContainerRef.current;
+    const container = messagesContainerRef.current;
+    if (!container) return;
 
-  if (container.scrollTop === 0) {
-    await loadOlderMessages();
-  }
-};
+    if (container.scrollTop === 0) {
+      const previousHeight = container.scrollHeight;
 
+      await loadOlderMessages();
+
+      requestAnimationFrame(() => {
+        const newHeight = container.scrollHeight;
+        container.scrollTop = newHeight - previousHeight;
+      });
+    }
+  };
 
   if (!activeChat) {
     return (
@@ -51,7 +94,11 @@ export default function ChatWindow() {
         </p>
       </div>
 
-      <div onScroll={handleScroll} ref={messagesContainerRef} className="flex-1 p-4 overflow-y-auto">
+      <div
+        onScroll={handleScroll}
+        ref={messagesContainerRef}
+        className="flex-1 p-4 overflow-y-auto"
+      >
         {messages.map((msg) => (
           <MessageBubble key={msg._id} message={msg} />
         ))}

@@ -14,6 +14,8 @@ export const ChatProvider = ({ children }) => {
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [unread, setUnread] = useState({});
+  const [page, setPage] = useState(1);
+  const [loadingOlder, setLoadingOlder] = useState(false);
 
   // Fetch chats
   useEffect(() => {
@@ -106,6 +108,7 @@ export const ChatProvider = ({ children }) => {
   // Fetch messages
   const openChat = async (chat) => {
     setActiveChat(chat);
+    setPage(1);
     const { data } = await api.get(`/message/${chat._id}`);
     setMessages(data);
     data.forEach((msg) => {
@@ -116,10 +119,30 @@ export const ChatProvider = ({ children }) => {
         });
       }
     });
-    setUnread((prev) => ({
-      ...prev,
-      [chat._id]: 0,
-    }));
+    // setUnread((prev) => ({
+    //   ...prev,
+    //   [chat._id]: 0,
+    // }));
+    setUnread(0);
+  };
+
+  const loadOlderMessages = async () => {
+    if (loadingOlder || !activeChat) return;
+
+    setLoadingOlder(true);
+
+    const nextPage = page + 1;
+
+    const { data } = await api.get(
+      `/message/${activeChat._id}?page=${nextPage}`,
+    );
+
+    if (data.length > 0) {
+      setMessages((prev) => [...data, ...prev]);
+      setPage(nextPage);
+    }
+
+    setLoadingOlder(false);
   };
 
   // Send message
@@ -164,6 +187,7 @@ export const ChatProvider = ({ children }) => {
         sendMessage,
         startTyping,
         stopTyping,
+        loadOlderMessages,
       }}
     >
       {children}
