@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
+import { formatChatDate } from "../utils/formatDate.js";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
 
@@ -66,6 +67,20 @@ export default function ChatWindow() {
     const container = messagesContainerRef.current;
     if (!container) return;
 
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    if (distanceFromBottom == 0) {
+      messages.forEach((msg) => {
+        if (msg.sender._id !== user._id && msg.status !== "seen") {
+          socket.emit("message-seen", {
+            messageId: msg._id,
+            senderId: msg.sender._id,
+          });
+        }
+      });
+    }
+
     if (container.scrollTop === 0) {
       const previousHeight = container.scrollHeight;
 
@@ -99,9 +114,29 @@ export default function ChatWindow() {
         ref={messagesContainerRef}
         className="flex-1 p-4 overflow-y-auto"
       >
-        {messages.map((msg) => (
-          <MessageBubble key={msg._id} message={msg} />
-        ))}
+        {messages.map((msg, index) => {
+          const currentDate = formatChatDate(msg.createdAt);
+
+          const previousDate =
+            index > 0 ? formatChatDate(messages[index - 1].createdAt) : null;
+
+          const showDateHeader = currentDate !== previousDate;
+
+          return (
+            <div key={msg._id}>
+              {showDateHeader && (
+                <div className="sticky top-0 z-10 flex justify-center my-3">
+                  <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
+                    {currentDate}
+                  </span>
+                </div>
+              )}
+
+              <MessageBubble message={msg} />
+            </div>
+          );
+        })}
+
         <div ref={messagesEndRef} />
       </div>
       {isTyping && (
