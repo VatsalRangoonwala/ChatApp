@@ -105,7 +105,7 @@ export default function ChatWindow() {
       <div className="p-4 border-b">
         <p className="font-bold">{otherUser.name}</p>
         <p className="text-sm text-gray-500">
-          {otherUser.isOnline ? "Online" : "Offline"}
+          { isTyping ? "typing..." : otherUser.isOnline ? "Online" : "Offline"}
         </p>
       </div>
 
@@ -139,12 +139,6 @@ export default function ChatWindow() {
 
         <div ref={messagesEndRef} />
       </div>
-      {isTyping && (
-        <p className="text-sm text-gray-400 px-4 py-1 animate-pulse">
-          typing...
-        </p>
-      )}
-
       <ChatInput />
     </div>
   );

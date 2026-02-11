@@ -8,7 +8,7 @@ export default function MessageBubble({ message }) {
   return (
     <div className={`mb-2 flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
-        className={`px-3 py-2 rounded max-w-[80%] flex justify-between gap-1.5 ${
+        className={`px-3 py-2 rounded max-w-[70%] flex justify-between gap-1 ${
           isMe ? "bg-blue-500 text-white" : "bg-gray-200"
         }`}
       >
