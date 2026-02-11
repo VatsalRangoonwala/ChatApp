@@ -21,8 +21,7 @@ export const ChatProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       api.get("/chat").then(({ data }) => {
-        (console.log(data),
-          setChats(data.chats),
+        (setChats(data.chats),
           data.chats.forEach((chat) => {
             setUnread((prev) => ({
               ...prev,
