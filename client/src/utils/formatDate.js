@@ -5,11 +5,9 @@ export const formatChatDate = (date) => {
 
   yesterday.setDate(today.getDate() - 1);
 
-  const isToday =
-    msgDate.toDateString() === today.toDateString();
+  const isToday = msgDate.toDateString() === today.toDateString();
 
-  const isYesterday =
-    msgDate.toDateString() === yesterday.toDateString();
+  const isYesterday = msgDate.toDateString() === yesterday.toDateString();
 
   if (isToday) return "Today";
   if (isYesterday) return "Yesterday";

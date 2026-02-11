@@ -105,7 +105,7 @@ export default function ChatWindow() {
       <div className="p-4 border-b">
         <p className="font-bold">{otherUser.name}</p>
         <p className="text-sm text-gray-500">
-          { isTyping ? "typing..." : otherUser.isOnline ? "Online" : "Offline"}
+          {isTyping ? "typing..." : otherUser.isOnline ? "Online" : "Offline"}
         </p>
       </div>
 
