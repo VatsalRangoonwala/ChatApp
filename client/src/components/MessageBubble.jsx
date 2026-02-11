@@ -12,10 +12,10 @@ export default function MessageBubble({ message }) {
           isMe ? "bg-blue-500 text-white" : "bg-gray-200"
         }`}
       >
-        <p className="break-all wrap-break-word">{message.text}</p>
+        <p className="break-all">{message.text}</p>
 
-        <div className="flex justify-end items-end gap-1 mt-1">
-          <span className="text-[10px] opacity-70">
+        <div className="flex justify-end items-end gap-1 mt-3">
+          <span className="text-[10px] opacity-70 text-nowrap">
             {formatMessageTime(message.createdAt)}
           </span>
 

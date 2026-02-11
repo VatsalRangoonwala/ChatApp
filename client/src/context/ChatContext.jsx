@@ -20,9 +20,18 @@ export const ChatProvider = ({ children }) => {
   // Fetch chats
   useEffect(() => {
     if (user) {
-      api.get("/chat").then(({ data }) => setChats(data));
+      api.get("/chat").then(({ data }) => {
+        (console.log(data),
+          setChats(data.chats),
+          data.chats.forEach((chat) => {
+            setUnread((prev) => ({
+              ...prev,
+              [chat._id]: data.unread,
+            }));
+          }));
+      });
     }
-  }, [user]);
+  }, [user, messages]);
 
   // Socket listeners
   useEffect(() => {
@@ -119,11 +128,11 @@ export const ChatProvider = ({ children }) => {
         });
       }
     });
-    // setUnread((prev) => ({
-    //   ...prev,
-    //   [chat._id]: 0,
-    // }));
-    setUnread(0);
+    setUnread((prev) => ({
+      ...prev,
+      [chat._id]: 0,
+    }));
+    // setUnread(0);
   };
 
   const loadOlderMessages = async () => {

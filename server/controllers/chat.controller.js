@@ -1,4 +1,5 @@
 import Chat from "../models/chat.model.js";
+import Message from "../models/message.model.js";
 
 // Create or Get One-to-One Chat
 export const accessChat = async (req, res) => {
@@ -25,7 +26,7 @@ export const accessChat = async (req, res) => {
 
     const fullChat = await Chat.findById(newChat._id).populate(
       "participants",
-      "-password"
+      "-password",
     );
 
     res.status(201).json(fullChat);
@@ -37,6 +38,12 @@ export const accessChat = async (req, res) => {
 // Fetch User Chats
 export const fetchChats = async (req, res) => {
   try {
+    const unread = await Message.countDocuments({
+      $and: [
+        { receiver: req.user._id },
+        { $or: [{ status: "sent" }, { status: "delivered" }] },
+      ],
+    });
     const chats = await Chat.find({
       participants: req.user._id,
     })
@@ -44,7 +51,7 @@ export const fetchChats = async (req, res) => {
       .populate("lastMessage")
       .sort({ updatedAt: -1 });
 
-    res.json(chats);
+    res.json({chats, unread});
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

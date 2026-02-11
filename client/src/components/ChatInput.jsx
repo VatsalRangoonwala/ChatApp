@@ -11,9 +11,14 @@ export default function ChatInput() {
 
   const submitHandler = (e) => {
     e.preventDefault();
-    sendMessage(text);
+    sendMessage(text.trim());
     setText("");
     stopTyping(receiver._id);
+  };
+
+  const isDisable = () => {
+    if (text.trim().length > 1) return false;
+    else return true;
   };
 
   return (
@@ -39,7 +44,12 @@ export default function ChatInput() {
           }, 800);
         }}
       />
-      <button className="ml-2 bg-blue-600 text-white px-4 rounded">Send</button>
+      <button
+        disabled={isDisable()}
+        className="ml-2 bg-blue-600 text-white px-4 rounded"
+      >
+        Send
+      </button>
     </form>
   );
 }
