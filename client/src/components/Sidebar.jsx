@@ -8,15 +8,24 @@ export default function Sidebar() {
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState([]);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
     api.get("/user").then(({ data }) => setUsers(data));
   }, []);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const filteredChats = chats.filter((chat) => {
     const otherUser = chat.participants.find((p) => p._id !== user._id);
 
-    return otherUser.name.toLowerCase().includes(search.toLowerCase());
+    return otherUser.name.toLowerCase().includes(debouncedSearch.toLowerCase());
   });
 
   const usersWithoutChat = users.filter((u) => {
@@ -24,7 +33,9 @@ export default function Sidebar() {
       chat.participants.some((p) => p._id === u._id),
     );
 
-    return !hasChat && u.name.toLowerCase().includes(search.toLowerCase());
+    return (
+      !hasChat && u.name.toLowerCase().includes(debouncedSearch.toLowerCase())
+    );
   });
 
   return (
@@ -49,8 +60,16 @@ export default function Sidebar() {
               onClick={() => openChat(chat)}
               className="p-3 border-b cursor-pointer hover:bg-gray-100"
             >
+              <div className="flex justify-between items-center">
+
               <p className="font-semibold">{otherUser.name}</p>
-              <p className="text-sm text-gray-500">{chat.lastMessage?.text}</p>
+              {unread[chat._id] > 0 && (
+                <span className="bg-red-500 text-white text-xs px-2 rounded-full">
+                  {unread[chat._id]}
+                </span>
+              )}
+              </div>
+              <p className="text-sm text-gray-500 truncate">{chat.lastMessage?.text}</p>
             </div>
           );
         })}
