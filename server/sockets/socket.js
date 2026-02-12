@@ -26,6 +26,25 @@ const socketHandler = (io) => {
     await User.findByIdAndUpdate(userId, { isOnline: true });
     socket.broadcast.emit("user-online", userId);
 
+    // ✅ mark pending messages as delivered
+    const undeliveredMessages = await Message.find({
+      receiver: userId,
+      status: "sent",
+    });
+
+    for (const msg of undeliveredMessages) {
+      msg.status = "delivered";
+      await msg.save();
+
+      // notify sender if online
+      const senderSocketId = onlineUsers.get(msg.sender.toString());
+
+      if (senderSocketId) {
+        io.to(senderSocketId).emit("message-delivered", {
+          messageId: msg._id,
+        });
+      }
+    }
 
     console.log("User connected:", userId);
 
@@ -40,6 +59,10 @@ const socketHandler = (io) => {
 
         await Message.findByIdAndUpdate(message._id, {
           status: "delivered",
+        });
+
+        io.to(socket.id).emit("message-delivered", {
+          messageId: message._id,
         });
       }
     });

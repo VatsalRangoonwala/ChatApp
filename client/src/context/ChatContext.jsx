@@ -21,13 +21,7 @@ export const ChatProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       api.get("/chat").then(({ data }) => {
-        (setChats(data.chats),
-          data.chats.forEach((chat) => {
-            setUnread((prev) => ({
-              ...prev,
-              [chat._id]: data.unread,
-            }));
-          }));
+        (setChats(data.chats), setUnread(data.unreadMap));
       });
     }
   }, [user, messages]);
@@ -69,10 +63,36 @@ export const ChatProvider = ({ children }) => {
           [message.chatId]: (prev[message.chatId] || 0) + 1,
         }));
       }
+
+      setChats((prevChats) => {
+        const chatIndex = prevChats.findIndex((c) => c._id === message.chatId);
+
+        if (chatIndex === -1) return prevChats;
+
+        const updatedChat = {
+          ...prevChats[chatIndex],
+          lastMessage: message,
+          updatedAt: message.createdAt,
+        };
+
+        const remainingChats = prevChats.filter(
+          (c) => c._id !== message.chatId,
+        );
+
+        return [updatedChat, ...remainingChats];
+      });
     });
 
     socket.on("typing", () => setIsTyping(true));
     socket.on("stop-typing", () => setIsTyping(false));
+
+    socket.on("message-delivered", ({ messageId }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === messageId ? { ...msg, status: "delivered" } : msg,
+        ),
+      );
+    });
 
     socket.on("message-seen", ({ messageId }) => {
       setMessages((prev) =>
@@ -108,6 +128,7 @@ export const ChatProvider = ({ children }) => {
       socket.off("typing");
       socket.off("stop-typing");
       socket.off("receive-message");
+      socket.off("message-delivered")
       socket.off("user-online");
       socket.off("user-offline");
     };
@@ -166,6 +187,22 @@ export const ChatProvider = ({ children }) => {
     });
 
     setMessages((prev) => [...prev, data]);
+
+    setChats((prevChats) => {
+      const chatIndex = prevChats.findIndex((c) => c._id === data.chatId);
+
+      if (chatIndex === -1) return prevChats;
+
+      const updatedChat = {
+        ...prevChats[chatIndex],
+        lastMessage: data,
+        updatedAt: data.createdAt,
+      };
+
+      const remainingChats = prevChats.filter((c) => c._id !== data.chatId);
+
+      return [updatedChat, ...remainingChats];
+    });
 
     socket.emit("send-message", {
       receiverId: receiver._id,

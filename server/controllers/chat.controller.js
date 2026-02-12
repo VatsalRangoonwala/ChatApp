@@ -38,12 +38,17 @@ export const accessChat = async (req, res) => {
 // Fetch User Chats
 export const fetchChats = async (req, res) => {
   try {
-    const unread = await Message.countDocuments({
-      $and: [
-        { receiver: req.user._id },
-        { $or: [{ status: "sent" }, { status: "delivered" }] },
-      ],
+    const unreadMessages = await Message.find({
+      receiver: req.user._id,
+      status: { $ne: "seen" },
+    }).select("chatId");
+
+    const unreadMap = {};
+
+    unreadMessages.forEach((msg) => {
+      unreadMap[msg.chatId] = (unreadMap[msg.chatId] || 0) + 1;
     });
+
     const chats = await Chat.find({
       participants: req.user._id,
     })
@@ -51,7 +56,7 @@ export const fetchChats = async (req, res) => {
       .populate("lastMessage")
       .sort({ updatedAt: -1 });
 
-    res.json({chats, unread});
+    res.json({ chats, unreadMap });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

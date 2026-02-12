@@ -9,7 +9,7 @@ export default function MessageBubble({ message }) {
     <div className={`mb-2 flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
         className={`px-3 py-2 rounded max-w-[70%] flex justify-between gap-1 ${
-          isMe ? "bg-blue-500 text-white" : "bg-gray-200"
+          isMe ? "bg-gray-900 text-white" : "bg-gray-200"
         }`}
       >
         <p className="break-all">{message.text}</p>
@@ -20,8 +20,12 @@ export default function MessageBubble({ message }) {
           </span>
 
           {isMe && (
-            <span className="text-[10px]">
-              {message.status === "seen" ? "✓✓" : "✓"}
+            <span className="text-[10px] ml-1">
+              {message.status === "sent" && "✓"}
+              {message.status === "delivered" && "✓✓"}
+              {message.status === "seen" && (
+                <span className="text-blue-400">✓✓</span>
+              )}
             </span>
           )}
         </div>
