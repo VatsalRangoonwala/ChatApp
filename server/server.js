@@ -8,6 +8,8 @@ import connectDB from "./config/db.js";
 import authRouter from "./routes/auth.route.js";
 import chatRouter from "./routes/chat.route.js";
 import msgRouter from "./routes/message.route.js";
+import userRouter from "./routes/user.route.js";
+import socketHandler from "./sockets/socket.js";
 
 dotenv.config();
 connectDB();
@@ -28,10 +30,9 @@ app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/message", msgRouter);
-
+app.use("/api/user", userRouter);
 
 // Socket Logic
-import socketHandler from "./sockets/socket.js";
 socketHandler(io);
 
 const PORT = process.env.PORT;

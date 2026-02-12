@@ -128,7 +128,7 @@ export const ChatProvider = ({ children }) => {
       socket.off("typing");
       socket.off("stop-typing");
       socket.off("receive-message");
-      socket.off("message-delivered")
+      socket.off("message-delivered");
       socket.off("user-online");
       socket.off("user-offline");
     };
@@ -220,6 +220,14 @@ export const ChatProvider = ({ children }) => {
     socket.emit("stop-typing", { receiverId });
   };
 
+  const addChatIfNotExists = (chat) => {
+    setChats((prev) => {
+      const exists = prev.find((c) => c._id === chat._id);
+      if (exists) return prev;
+      return [chat, ...prev];
+    });
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -233,6 +241,7 @@ export const ChatProvider = ({ children }) => {
         startTyping,
         stopTyping,
         loadOlderMessages,
+        addChatIfNotExists
       }}
     >
       {children}
