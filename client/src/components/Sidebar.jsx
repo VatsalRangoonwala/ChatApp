@@ -2,6 +2,8 @@ import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import api from "../services/api";
+import ProfileSection from "./ProfileSection";
+
 
 export default function Sidebar() {
   const { chats, openChat, unread } = useChat();
@@ -39,12 +41,13 @@ export default function Sidebar() {
   });
 
   return (
-    <div className="w-1/4 border-r flex flex-col">
-      <div className="p-3 border-b">
+    <div className="w-1/4 border-r flex flex-col h-full">
+       <ProfileSection />
+      <div className="p-2 border-b">
         <input
           type="text"
           placeholder="Search chats or users..."
-          className="w-full p-2 border rounded"
+          className="w-full p-1.5 border rounded-3xl"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -58,25 +61,32 @@ export default function Sidebar() {
             <div
               key={chat._id}
               onClick={() => openChat(chat)}
-              className="p-3 border-b cursor-pointer hover:bg-gray-100"
+              className="p-2 border-b cursor-pointer hover:bg-gray-100 flex gap-2 items-center"
             >
-              <div className="flex justify-between items-center">
-
-              <p className="font-semibold">{otherUser.name}</p>
-              {unread[chat._id] > 0 && (
-                <span className="bg-red-500 text-white text-xs px-2 rounded-full">
-                  {unread[chat._id]}
-                </span>
-              )}
+              <img
+                src={otherUser.avatar || "/DefaultProfile.png"}
+                className="w-10 h-10 rounded-full"
+              />
+              <div className="min-w-0">
+                <div className="flex justify-between items-center">
+                  <p className="font-semibold">{otherUser.name}</p>
+                  {unread[chat._id] > 0 && (
+                    <span className="bg-red-500 text-white text-xs px-2 rounded-full">
+                      {unread[chat._id]}
+                    </span>
+                  )}
+                </div>
+                <p className="text-sm text-gray-500 truncate">
+                  {chat.lastMessage?.text}
+                </p>
               </div>
-              <p className="text-sm text-gray-500 truncate">{chat.lastMessage?.text}</p>
             </div>
           );
         })}
 
         {/* New Users Section */}
         {search && usersWithoutChat.length > 0 && (
-          <div className="border-t mt-2">
+          <div className="border-t">
             <p className="text-xs text-gray-400 p-2">Start New Chat</p>
 
             {usersWithoutChat.map((u) => (

@@ -26,12 +26,17 @@ const userSchema = new mongoose.Schema(
       default: "",
     },
 
+    bio: {
+      type: String,
+      default: "New to the neighborhood! 👋",
+    },
+
     isOnline: {
       type: Boolean,
       default: false,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 const User = mongoose.model("User", userSchema);

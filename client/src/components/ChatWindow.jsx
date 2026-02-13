@@ -102,11 +102,17 @@ export default function ChatWindow() {
   }
   return (
     <div className="flex flex-col flex-1">
-      <div className="p-4 border-b">
-        <p className="font-bold">{otherUser.name}</p>
-        <p className="text-sm text-gray-500">
-          {isTyping ? "typing..." : otherUser.isOnline ? "Online" : "Offline"}
-        </p>
+      <div className="flex items-center border-b">
+        <img
+          src={otherUser.avatar || "/DefaultProfile.png"}
+          className="ml-3 w-10 h-10 rounded-full"
+        />
+        <div className="p-3">
+          <p className="font-bold">{otherUser.name}</p>
+          <p className="text-sm text-gray-500">
+            {isTyping ? "typing..." : otherUser.isOnline ? "Online" : "Offline"}
+          </p>
+        </div>
       </div>
 
       <div
