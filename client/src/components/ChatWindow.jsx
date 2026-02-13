@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
 import { useSocket } from "../context/SocketContext";
 import { formatChatDate } from "../utils/formatDate.js";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
+import ProfileViewer from "./ProfileViewer.jsx";
 
 export default function ChatWindow() {
   const messagesEndRef = useRef(null);
@@ -14,6 +15,7 @@ export default function ChatWindow() {
   const { socket } = useSocket();
   const otherUser = activeChat?.participants?.find((p) => p._id !== user._id);
   const isInitialLoad = useRef(true);
+  const [viewProfile, setViewProfile] = useState(null);
 
   useEffect(() => {
     isInitialLoad.current = true;
@@ -104,8 +106,9 @@ export default function ChatWindow() {
     <div className="flex flex-col flex-1">
       <div className="flex items-center border-b">
         <img
-          src={otherUser.avatar || "/DefaultProfile.png"}
-          className="ml-3 w-10 h-10 rounded-full"
+          onClick={() => setViewProfile(otherUser)}
+          src={otherUser.avatar || "https://ui-avatars.com/api/?name=" + otherUser.name}
+          className="ml-3 w-10 h-10 rounded-full object-cover"
         />
         <div className="p-3">
           <p className="font-bold">{otherUser.name}</p>
@@ -146,6 +149,12 @@ export default function ChatWindow() {
         <div ref={messagesEndRef} />
       </div>
       <ChatInput />
+      {viewProfile && (
+        <ProfileViewer
+          user={viewProfile}
+          onClose={() => setViewProfile(null)}
+        />
+      )}
     </div>
   );
 }

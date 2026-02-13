@@ -3,14 +3,15 @@ import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
 import api from "../services/api";
 import ProfileSection from "./ProfileSection";
-
+import ProfileModal from "./ProfileModal";
 
 export default function Sidebar() {
-  const { chats, openChat, unread } = useChat();
+  const { chats, openChat, unread, addChatIfNotExists } = useChat();
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => {
     api.get("/user").then(({ data }) => setUsers(data));
@@ -40,10 +41,16 @@ export default function Sidebar() {
     );
   });
 
+  const startChat = async (userId) => {
+    const { data } = await api.post("/chat", { userId });
+    addChatIfNotExists(data);
+    openChat(data);
+  };
+
   return (
     <div className="w-1/4 border-r flex flex-col h-full">
-       <ProfileSection />
-      <div className="p-2 border-b">
+      <ProfileSection onOpen={() => setShowProfile(true)} />
+      <div className="p-2">
         <input
           type="text"
           placeholder="Search chats or users..."
@@ -61,11 +68,14 @@ export default function Sidebar() {
             <div
               key={chat._id}
               onClick={() => openChat(chat)}
-              className="p-2 border-b cursor-pointer hover:bg-gray-100 flex gap-2 items-center"
+              className="p-2 cursor-pointer hover:bg-gray-100 flex gap-2 items-center"
             >
               <img
-                src={otherUser.avatar || "/DefaultProfile.png"}
-                className="w-10 h-10 rounded-full"
+                src={
+                  otherUser.avatar ||
+                  "https://ui-avatars.com/api/?name=" + otherUser.name
+                }
+                className="w-10 h-10 rounded-full object-cover"
               />
               <div className="min-w-0">
                 <div className="flex justify-between items-center">
@@ -101,6 +111,7 @@ export default function Sidebar() {
           </div>
         )}
       </div>
+      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
     </div>
   );
 }
