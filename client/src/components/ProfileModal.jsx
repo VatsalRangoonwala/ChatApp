@@ -1,13 +1,14 @@
 import { useState } from "react";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { PhotoProvider, PhotoView } from "react-photo-view";
+import "react-photo-view/dist/react-photo-view.css";
 
 export default function ProfileModal({ onClose }) {
   const { user, login } = useAuth();
 
   const [name, setName] = useState(user.name);
   const [bio, setBio] = useState(user.bio || "");
-  const [avatar, setAvatar] = useState(user.avatar || "");
   const [preview, setPreview] = useState(user.avatar);
   const [file, setFile] = useState(null);
 
@@ -44,11 +45,16 @@ export default function ProfileModal({ onClose }) {
         <h2 className="text-lg font-semibold mb-4">Edit Profile</h2>
 
         <div className="flex flex-col items-center mb-4">
-          <img
-            src={preview || "https://ui-avatars.com/api/?name=" + user.name}
-            className="w-20 h-20 rounded-full object-cover mb-2"
-          />
-
+          <PhotoProvider>
+            <PhotoView
+              src={preview || "https://ui-avatars.com/api/?name=" + user.name}
+            >
+              <img
+                src={preview || "https://ui-avatars.com/api/?name=" + user.name}
+                className="w-20 h-20 rounded-full object-cover mb-2 cursor-pointer"
+              />
+            </PhotoView>
+          </PhotoProvider>
           <input type="file" onChange={handleImageChange} />
         </div>
         <input

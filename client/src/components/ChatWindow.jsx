@@ -104,9 +104,8 @@ export default function ChatWindow() {
   }
   return (
     <div className="flex flex-col flex-1">
-      <div className="flex items-center border-b">
+      <div onClick={() => setViewProfile(otherUser)} className="flex items-center border-b cursor-pointer">
         <img
-          onClick={() => setViewProfile(otherUser)}
           src={otherUser.avatar || "https://ui-avatars.com/api/?name=" + otherUser.name}
           className="ml-3 w-10 h-10 rounded-full object-cover"
         />

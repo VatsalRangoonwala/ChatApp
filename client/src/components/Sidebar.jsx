@@ -78,10 +78,10 @@ export default function Sidebar() {
                 className="w-10 h-10 rounded-full object-cover"
               />
               <div className="min-w-0">
-                <div className="flex justify-between items-center">
+                <div className="flex gap-2 items-center">
                   <p className="font-semibold">{otherUser.name}</p>
                   {unread[chat._id] > 0 && (
-                    <span className="bg-red-500 text-white text-xs px-2 rounded-full">
+                    <span className="bg-green-600 text-white text-xs px-1 rounded-full">
                       {unread[chat._id]}
                     </span>
                   )}
