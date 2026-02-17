@@ -6,6 +6,7 @@ import { formatChatDate } from "../utils/formatDate.js";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
 import ProfileViewer from "./ProfileViewer.jsx";
+import { formatMessageTime } from "../utils/formatTime.js";
 
 export default function ChatWindow() {
   const messagesEndRef = useRef(null);
@@ -103,16 +104,28 @@ export default function ChatWindow() {
     );
   }
   return (
-    <div className="flex flex-col flex-1">
-      <div onClick={() => setViewProfile(otherUser)} className="flex items-center border-b cursor-pointer">
+    <div className="flex flex-col flex-1 bg-gray-200">
+      <div
+        onClick={() => setViewProfile(otherUser)}
+        className="flex items-center cursor-pointer bg-white border-b border-gray-200"
+      >
         <img
-          src={otherUser.avatar || "https://ui-avatars.com/api/?name=" + otherUser.name}
+          src={
+            otherUser.avatar ||
+            "https://ui-avatars.com/api/?name=" + otherUser.name
+          }
           className="ml-3 w-10 h-10 rounded-full object-cover"
         />
         <div className="p-3">
           <p className="font-bold">{otherUser.name}</p>
-          <p className="text-sm text-gray-500">
-            {isTyping ? "typing..." : otherUser.isOnline ? "Online" : "Offline"}
+          <p
+            className={`text-sm ${isTyping ? "text-green-600" : "text-gray-500"}`}
+          >
+            {isTyping
+              ? "typing..."
+              : otherUser.isOnline
+                ? "Online"
+                : `Last seen ${formatChatDate(otherUser.updatedAt)} at ${formatMessageTime(otherUser.updatedAt)}`}
           </p>
         </div>
       </div>
@@ -120,7 +133,7 @@ export default function ChatWindow() {
       <div
         onScroll={handleScroll}
         ref={messagesContainerRef}
-        className="flex-1 p-4 overflow-y-auto"
+        className="flex-1 overflow-y-auto bg-gray-200 px-15"
       >
         {messages.map((msg, index) => {
           const currentDate = formatChatDate(msg.createdAt);
@@ -134,7 +147,7 @@ export default function ChatWindow() {
             <div key={msg._id}>
               {showDateHeader && (
                 <div className="sticky top-0 z-10 flex justify-center my-3">
-                  <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
+                  <span className="bg-white text-gray-600 text-xs px-3 py-1 rounded-full">
                     {currentDate}
                   </span>
                 </div>

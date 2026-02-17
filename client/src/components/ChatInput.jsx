@@ -22,9 +22,9 @@ export default function ChatInput() {
   };
 
   return (
-    <form onSubmit={submitHandler} className="p-4 border-t flex">
+    <form onSubmit={submitHandler} className="p-2 pt-0 flex">
       <input
-        className="flex-1 border p-2 rounded"
+        className="flex-1 p-2 rounded-3xl bg-white focus:outline-none px-4 border border-gray-200"
         placeholder="Type a message..."
         value={text}
         onChange={(e) => {
@@ -46,9 +46,9 @@ export default function ChatInput() {
       />
       <button
         disabled={isDisable()}
-        className="ml-2 bg-blue-600 text-white px-4 rounded"
+        className="ml-2 text-2xl bg-green-600 text-white rounded-full px-2.5"
       >
-        Send
+        ➤
       </button>
     </form>
   );

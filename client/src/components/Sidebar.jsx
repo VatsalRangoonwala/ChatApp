@@ -1,12 +1,12 @@
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import ProfileSection from "./ProfileSection";
 import ProfileModal from "./ProfileModal";
 
-export default function Sidebar() {
-  const { chats, openChat, unread, addChatIfNotExists } = useChat();
+function Sidebar() {
+  const { chats, openChat, unread, addChatIfNotExists, activeChat } = useChat();
   const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState([]);
@@ -48,13 +48,13 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-1/4 border-r flex flex-col h-full">
+    <div className="w-1/4 border-r border-gray-200 flex flex-col h-full">
       <ProfileSection onOpen={() => setShowProfile(true)} />
-      <div className="p-2">
+      <div className="p-2 pt-0">
         <input
           type="text"
           placeholder="Search chats or users..."
-          className="w-full p-1.5 border rounded-3xl"
+          className="w-full p-1.5 border-2 hover:border-gray-400 border-gray-100 focus:outline-green-500 bg-gray-100 rounded-3xl px-3"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -68,7 +68,7 @@ export default function Sidebar() {
             <div
               key={chat._id}
               onClick={() => openChat(chat)}
-              className="p-2 cursor-pointer hover:bg-gray-100 flex gap-2 items-center"
+              className={`p-2 cursor-pointer hover:bg-gray-100 flex gap-2 items-center ${activeChat?._id == chat._id ? "bg-gray-100" : "bg-white"}`}
             >
               <img
                 src={
@@ -115,3 +115,5 @@ export default function Sidebar() {
     </div>
   );
 }
+
+export default React.memo(Sidebar);

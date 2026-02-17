@@ -1,15 +1,16 @@
 import { useAuth } from "../context/AuthContext";
 import { formatMessageTime } from "../utils/formatTime.js";
+import React from "react";
 
-export default function MessageBubble({ message }) {
+function MessageBubble({ message }) {
   const { user } = useAuth();
   const isMe = message.sender._id === user._id;
 
   return (
     <div className={`mb-2 flex ${isMe ? "justify-end" : "justify-start"}`}>
       <div
-        className={`px-3 py-2 rounded max-w-[70%] flex justify-between gap-1 ${
-          isMe ? "bg-gray-900 text-white" : "bg-gray-200"
+        className={`px-4 py-1 rounded-xl max-w-[70%] flex justify-between gap-1 ${
+          isMe ? "bg-gray-900 text-white rounded-tr-none" : "bg-white roun rounded-tl-none"
         }`}
       >
         <p className="break-all">{message.text}</p>
@@ -33,3 +34,4 @@ export default function MessageBubble({ message }) {
     </div>
   );
 }
+export default React.memo(MessageBubble);

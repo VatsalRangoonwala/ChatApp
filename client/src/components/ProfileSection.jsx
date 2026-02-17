@@ -3,7 +3,7 @@ import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
 
 export default function ProfileSection({ onOpen }) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <div className="flex items-center justify-between p-3">
@@ -26,13 +26,23 @@ export default function ProfileSection({ onOpen }) {
 
         <div>
           <p className="font-semibold text-sm">{user?.name}</p>
-          <p className="text-xs text-gray-500">My Profile</p>
+          <p className="text-xs text-gray-500">Me</p>
         </div>
       </div>
-
-      <button onClick={onOpen} className="text-gray-500 hover:text-gray-700 cursor-pointer">
-        ⚙
-      </button>
+      <div className="flex gap-2 items-end">
+        <button
+          onClick={onOpen}
+          className="text-gray-500 hover:bg-gray-100 cursor-pointer text-xl rounded-full p-2"
+        >
+          ⚙
+        </button>
+        <button
+          onClick={logout}
+          className="text-red-700 hover:bg-gray-100 cursor-pointer text-xl rounded-full p-2"
+        >
+          [➔
+        </button>
+      </div>
     </div>
   );
 }

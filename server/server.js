@@ -20,7 +20,7 @@ const server = http.createServer(app);
 // Socket Setup
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: process.env.CLIENT_URL,
   },
 });
 
