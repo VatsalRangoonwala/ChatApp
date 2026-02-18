@@ -82,6 +82,15 @@ const socketHandler = (io) => {
       }
     });
 
+    //UPDATE AND DELETE
+    socket.on("message-updated", (message) => {
+      io.to(message.chatId).emit("message-updated", message);
+    });
+
+    socket.on("message-deleted", (message) => {
+      io.to(message.chatId).emit("message-deleted", message);
+    });
+
     //  SEEN
     socket.on("message-seen", async ({ messageId, senderId }) => {
       await Message.findByIdAndUpdate(messageId, {

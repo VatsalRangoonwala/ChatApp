@@ -94,6 +94,14 @@ export const ChatProvider = ({ children }) => {
       );
     });
 
+    socket.on("message-updated", (updatedMessage) => {
+      updateMessageLocal(updatedMessage);
+    });
+
+    socket.on("message-deleted", (deletedMessage) => {
+      deleteMessageLocal(deletedMessage);
+    });
+
     socket.on("message-seen", ({ messageId }) => {
       setMessages((prev) =>
         prev.map((msg) =>
@@ -228,6 +236,22 @@ export const ChatProvider = ({ children }) => {
     });
   };
 
+  const updateMessageLocal = (updatedMessage) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg._id === updatedMessage._id ? updatedMessage : msg,
+      ),
+    );
+  };
+
+  const deleteMessageLocal = (deletedMessage) => {
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg._id === deletedMessage._id ? deletedMessage : msg,
+      ),
+    );
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -241,7 +265,9 @@ export const ChatProvider = ({ children }) => {
         startTyping,
         stopTyping,
         loadOlderMessages,
-        addChatIfNotExists
+        addChatIfNotExists,
+        updateMessageLocal,
+        deleteMessageLocal,
       }}
     >
       {children}
