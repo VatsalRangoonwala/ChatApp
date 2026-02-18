@@ -1,7 +1,7 @@
 import { useState } from "react";
 import api from "../services/api.js";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
 export default function Register() {
@@ -53,6 +53,12 @@ export default function Register() {
         <button className="w-full bg-green-600 text-white py-2 rounded">
           Register
         </button>
+        <p className="text-center mt-3 text-sm">
+          Already have account?{" "}
+          <Link className="text-green-600 ml-1" to="/login">
+            Login
+          </Link>
+        </p>
       </form>
     </div>
   );

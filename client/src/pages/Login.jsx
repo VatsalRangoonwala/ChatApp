@@ -1,7 +1,7 @@
 import { useState } from "react";
 import api from "../services/api.js";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
 export default function Login() {
@@ -43,6 +43,12 @@ export default function Login() {
         <button className="w-full bg-blue-600 text-white py-2 rounded">
           Login
         </button>
+        <p className="text-center mt-3 text-sm">
+          Not registered?
+          <Link className="text-blue-500 ml-1" to="/register">
+            Create an account
+          </Link>
+        </p>
       </form>
     </div>
   );
