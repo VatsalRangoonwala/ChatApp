@@ -24,7 +24,7 @@ export const ChatProvider = ({ children }) => {
         (setChats(data.chats), setUnread(data.unreadMap));
       });
     }
-  }, [user, messages]);
+  }, [user, messages, chats]);
 
   // Socket listeners
   useEffect(() => {
@@ -137,6 +137,8 @@ export const ChatProvider = ({ children }) => {
       socket.off("stop-typing");
       socket.off("receive-message");
       socket.off("message-delivered");
+      socket.off("message-updated");
+      socket.off("message-deleted");
       socket.off("user-online");
       socket.off("user-offline");
     };

@@ -3,18 +3,24 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Chat from "./pages/Chat";
 import { useAuth } from "./context/AuthContext";
+import { Toaster } from "react-hot-toast";
 
 export default function App() {
   const { user } = useAuth();
 
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={user ? <Chat /> : <Navigate to="/login" />}
+    <>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 2000,
+        }}
       />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-    </Routes>
+      <Routes>
+        <Route path="/" element={user ? <Chat /> : <Navigate to="/login" />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+    </>
   );
 }

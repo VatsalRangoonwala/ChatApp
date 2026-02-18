@@ -3,6 +3,7 @@ import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
+import toast from "react-hot-toast";
 
 export default function ProfileModal({ onClose }) {
   const { user, login } = useAuth();
@@ -13,22 +14,28 @@ export default function ProfileModal({ onClose }) {
   const [file, setFile] = useState(null);
 
   const handleSave = async () => {
-    const formData = new FormData();
-    formData.append("name", name);
-    formData.append("bio", bio);
+    try {
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("bio", bio);
 
-    if (file) {
-      formData.append("avatar", file);
+      if (file) {
+        formData.append("avatar", file);
+      }
+
+      const { data } = await api.put("/user/profile", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      toast.success("Profile updated");
+
+      login({ ...user, ...data });
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Profile update failed");
+      // console.log(err);
     }
-
-    const { data } = await api.put("/user/profile", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-
-    login({ ...user, ...data });
-    onClose();
   };
 
   const handleImageChange = (e) => {

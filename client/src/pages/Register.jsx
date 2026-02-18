@@ -2,6 +2,7 @@ import { useState } from "react";
 import api from "../services/api.js";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -11,19 +12,27 @@ export default function Register() {
   const navigate = useNavigate();
 
   const submitHandler = async (e) => {
-    e.preventDefault();
-    const { data } = await api.post("/auth/register", {
-      name,
-      email,
-      password,
-    });
-    login(data);
-    navigate("/");
+    try {
+      e.preventDefault();
+      const { data } = await api.post("/auth/register", {
+        name,
+        email,
+        password,
+      });
+      login(data);
+      toast.success(data?.message);
+      navigate("/");
+    } catch (error) {
+      toast.error(error.response?.data?.message);
+    }
   };
 
   return (
     <div className="flex items-center justify-center h-screen bg-gray-100">
-      <form className="bg-white p-6 rounded shadow w-80" onSubmit={submitHandler}>
+      <form
+        className="bg-white p-6 rounded shadow w-80"
+        onSubmit={submitHandler}
+      >
         <h2 className="text-xl font-bold mb-4 text-center">Register</h2>
         <input
           className="w-full border p-2 mb-3"

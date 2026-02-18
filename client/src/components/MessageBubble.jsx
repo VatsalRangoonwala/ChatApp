@@ -1,3 +1,4 @@
+import toast from "react-hot-toast";
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import api from "../services/api.js";
@@ -11,6 +12,7 @@ function MessageBubble({ message }) {
   const [editing, setEditing] = useState(false);
   const [editText, setEditText] = useState(message.text);
   const [showMenu, setShowMenu] = useState(false);
+  const canDelete = Date.now() - new Date(message.createdAt) < 15 * 60 * 1000;
 
   // ✅ EDIT MESSAGE
   const handleEdit = async () => {
@@ -20,8 +22,10 @@ function MessageBubble({ message }) {
       });
 
       updateMessageLocal(data);
+      toast.success("Message edited");
       setEditing(false);
     } catch (err) {
+      toast.error(err.response?.data?.message || "Edit failed");
       console.error(err);
     }
   };
@@ -32,8 +36,10 @@ function MessageBubble({ message }) {
       const { data } = await api.delete(`/message/delete/${message._id}`);
 
       deleteMessageLocal(data);
+      toast.success("Message deleted");
     } catch (err) {
-      console.error(err);
+      toast.error(err.response?.data?.message || "Delete failed");
+      // console.error(err);
     }
   };
 
@@ -71,15 +77,18 @@ function MessageBubble({ message }) {
               onChange={(e) => setEditText(e.target.value)}
               className="px-2 py-1 rounded focus:outline-none"
             />
-            <button onClick={handleEdit} className="text-black rounded-full px-2.5 bg-white">
+            <button
+              onClick={handleEdit}
+              className="text-black rounded-full px-2.5 bg-white"
+            >
               ✓
             </button>
           </div>
         ) : (
-          <p className="break-all">{message.text}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap wrap-break-words">{message.text}</p>
         )}
 
-        <div className="flex justify-end items-end gap-1 mt-3">
+        <div className="flex justify-end items-end gap-1 mt-2">
           {message.edited && !message.deleted && (
             <span className="text-[10px] text-gray-400">Edited</span>
           )}
@@ -98,7 +107,7 @@ function MessageBubble({ message }) {
           )}
         </div>
       </div>
-      {isMe && !message.deleted && (
+      {isMe && !message.deleted && canDelete && (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -118,13 +127,13 @@ function MessageBubble({ message }) {
               setShowMenu(false);
             }}
             className={`block w-full text-left rounded px-3 py-2 hover:bg-gray-100 ${
-              message.status === "seen"
-                && "text-gray-300 cursor-not-allowed"
+              message.status === "seen" && "text-gray-300 cursor-not-allowed"
             }`}
           >
             Edit
           </button>
           <button
+            disabled={!canDelete}
             onClick={() => {
               handleDelete();
               setShowMenu(false);

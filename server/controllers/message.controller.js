@@ -56,7 +56,12 @@ export const updateMessage = async (req, res) => {
 
   const updated = await message.save();
 
-  res.json(updated);
+  const populated = await Message.findById(message._id).populate(
+    "sender",
+    "_id name avatar",
+  );
+
+  res.json(populated);
 };
 
 export const deleteMessage = async (req, res) => {
@@ -70,12 +75,30 @@ export const deleteMessage = async (req, res) => {
     return res.status(403).json({ message: "Not allowed" });
   }
 
+  const DELETE_LIMIT_MINUTES = 15;
+
+  const messageTime = new Date(message.createdAt);
+  const now = new Date();
+
+  const diffMinutes = (now - messageTime) / (1000 * 60);
+
+  if (diffMinutes > DELETE_LIMIT_MINUTES) {
+    return res.status(400).json({
+      message: "Delete time expired",
+    });
+  }
+
   message.text = "This message was deleted";
   message.deleted = true;
 
   await message.save();
 
-  res.json(message);
+  const populated = await Message.findById(message._id).populate(
+    "sender",
+    "_id name avatar",
+  );
+
+  res.json(populated);
 };
 
 // FETCH MESSAGES WITH PAGINATION

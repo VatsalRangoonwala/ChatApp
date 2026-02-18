@@ -59,7 +59,7 @@ function Sidebar() {
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto px-2">
         {/* Existing Chats */}
         {filteredChats.map((chat) => {
           const otherUser = chat.participants.find((p) => p._id !== user._id);
@@ -68,7 +68,7 @@ function Sidebar() {
             <div
               key={chat._id}
               onClick={() => openChat(chat)}
-              className={`p-2 cursor-pointer hover:bg-gray-100 flex gap-2 items-center ${activeChat?._id == chat._id ? "bg-gray-100" : "bg-white"}`}
+              className={`p-2 mb-1 rounded cursor-pointer hover:bg-gray-100 flex gap-2 items-center transition ${activeChat?._id == chat._id ? "bg-gray-100" : "bg-white"}`}
             >
               <img
                 src={
@@ -77,33 +77,32 @@ function Sidebar() {
                 }
                 className="w-10 h-10 rounded-full object-cover"
               />
-              <div className="min-w-0">
-                <div className="flex gap-2 items-center">
-                  <p className="font-semibold">{otherUser.name}</p>
-                  {unread[chat._id] > 0 && (
-                    <span className="bg-green-600 text-white text-xs px-1 rounded-full">
-                      {unread[chat._id]}
-                    </span>
-                  )}
-                </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold">{otherUser.name}</p>
+
                 <p className="text-sm text-gray-500 truncate">
                   {chat.lastMessage?.text}
                 </p>
               </div>
+              {unread[chat._id] > 0 && (
+                <span className="bg-green-600 text-white text-xs px-1 rounded-full">
+                  {unread[chat._id]}
+                </span>
+              )}
             </div>
           );
         })}
 
         {/* New Users Section */}
         {search && usersWithoutChat.length > 0 && (
-          <div className="border-t">
-            <p className="text-xs text-gray-400 p-2">Start New Chat</p>
+          <div>
+            <p className="text-xs text-gray-400 text-center pb-1">Start New Chat</p>
 
             {usersWithoutChat.map((u) => (
               <div
                 key={u._id}
                 onClick={() => startChat(u._id)}
-                className="p-3 border-b cursor-pointer hover:bg-gray-100"
+                className="p-3 cursor-pointer hover:bg-gray-100 rounded"
               >
                 {u.name}
               </div>
