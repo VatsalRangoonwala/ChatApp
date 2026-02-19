@@ -41,6 +41,7 @@ export const fetchChats = async (req, res) => {
     const unreadMessages = await Message.find({
       receiver: req.user._id,
       status: { $ne: "seen" },
+      deleted: false,
     }).select("chatId");
 
     const unreadMap = {};

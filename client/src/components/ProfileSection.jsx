@@ -1,9 +1,11 @@
 import { useAuth } from "../context/AuthContext";
+import { useChat } from "../context/ChatContext";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
 
 export default function ProfileSection({ onOpen }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { logout } = useChat();
 
   return (
     <div className="flex items-center justify-between p-3">

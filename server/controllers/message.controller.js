@@ -88,7 +88,6 @@ export const deleteMessage = async (req, res) => {
     });
   }
 
-  message.text = "This message was deleted";
   message.deleted = true;
 
   await message.save();

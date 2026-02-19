@@ -80,9 +80,15 @@ function Sidebar() {
               <div className="flex-1 min-w-0">
                 <p className="font-semibold">{otherUser.name}</p>
 
-                <p className="text-sm text-gray-500 truncate">
-                  {chat.lastMessage?.text}
-                </p>
+                {chat.lastMessage?.deleted ? (
+                  <p className="text-sm text-gray-500 italic">
+                    This message was deleted
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-500 truncate">
+                    {chat.lastMessage?.text}
+                  </p>
+                )}
               </div>
               {unread[chat._id] > 0 && (
                 <span className="bg-green-600 text-white text-xs px-1 rounded-full">
@@ -96,7 +102,9 @@ function Sidebar() {
         {/* New Users Section */}
         {search && usersWithoutChat.length > 0 && (
           <div>
-            <p className="text-xs text-gray-400 text-center pb-1">Start New Chat</p>
+            <p className="text-xs text-gray-400 text-center pb-1">
+              Start New Chat
+            </p>
 
             {usersWithoutChat.map((u) => (
               <div

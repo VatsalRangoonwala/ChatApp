@@ -6,7 +6,7 @@ import { useSocket } from "./SocketContext";
 const ChatContext = createContext();
 
 export const ChatProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { socket } = useSocket();
 
   const [chats, setChats] = useState([]);
@@ -254,6 +254,17 @@ export const ChatProvider = ({ children }) => {
     );
   };
 
+
+  const logout = () => {
+    localStorage.removeItem("user");
+    setUser(null);
+    setChats([]);
+    setMessages([]);
+    setActiveChat(null);
+    setUnread({});
+    toast.success("Logged out");
+  };
+
   return (
     <ChatContext.Provider
       value={{
@@ -270,6 +281,7 @@ export const ChatProvider = ({ children }) => {
         addChatIfNotExists,
         updateMessageLocal,
         deleteMessageLocal,
+        logout,
       }}
     >
       {children}
