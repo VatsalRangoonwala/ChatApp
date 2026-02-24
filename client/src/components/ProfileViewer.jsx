@@ -23,7 +23,7 @@ export default function ProfileViewer({ user, onClose }) {
                 src={
                   user.avatar || "https://ui-avatars.com/api/?name=" + user.name
                 }
-                className="w-28 h-28 rounded-full object-cover mb-3 cursor-pointer"
+                className="w-30 h-30 rounded-full object-cover mb-3 cursor-pointer border-4 border-gray-200"
               />
             </PhotoView>
           </PhotoProvider>

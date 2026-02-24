@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Chat from "./pages/Chat";
+import Profile from "./pages/Profile";
 import { useAuth } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/" element={user ? <Chat /> : <Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </>
   );

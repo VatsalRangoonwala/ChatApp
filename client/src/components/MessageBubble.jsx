@@ -4,6 +4,7 @@ import { useChat } from "../context/ChatContext";
 import api from "../services/api.js";
 import { formatMessageTime } from "../utils/formatTime.js";
 import React, { useEffect, useState } from "react";
+import { MoreVertical, Edit3, Trash2 } from "lucide-react";
 
 function MessageBubble({ message }) {
   const { user } = useAuth();
@@ -113,23 +114,24 @@ function MessageBubble({ message }) {
             e.stopPropagation();
             setShowMenu((prev) => !prev);
           }}
-          className="absolute opacity-0 group-hover:opacity-100 transition text-white"
+          className="absolute opacity-0 group-hover:opacity-100 transition text-white top-1"
         >
-          ⋮
+          <MoreVertical size={16} />
         </button>
       )}
       {showMenu && (
-        <div className="p-2 absolute right-0 -top-16 bg-white shadow-lg rounded-md text-sm z-50 min-w-30">
+        <div className="p-2 absolute right-0 -top-16 bg-white shadow-lg rounded-md text-sm z-50">
           <button
             disabled={message.status === "seen"}
             onClick={() => {
               setEditing(true);
               setShowMenu(false);
             }}
-            className={`block w-full text-left rounded px-3 py-2 hover:bg-gray-100 ${
+            className={`flex items-center gap-2 w-full text-left rounded px-3 py-2 hover:bg-gray-100 ${
               message.status === "seen" && "text-gray-300 cursor-not-allowed"
             }`}
           >
+            <Edit3 size={14} />
             Edit
           </button>
           <button
@@ -138,8 +140,9 @@ function MessageBubble({ message }) {
               handleDelete();
               setShowMenu(false);
             }}
-            className="block w-full rounded text-left px-3 py-2 hover:bg-red-100 hover:text-red-600"
+            className="flex items-center gap-2 w-full rounded text-left px-3 py-2 hover:bg-red-100 hover:text-red-600"
           >
+            <Trash2 size={14} />
             Delete
           </button>
         </div>

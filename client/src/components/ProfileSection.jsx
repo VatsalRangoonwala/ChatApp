@@ -2,6 +2,7 @@ import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
+import { LogOut, Settings } from "lucide-react";
 
 export default function ProfileSection({ onOpen }) {
   const { user } = useAuth();
@@ -31,18 +32,18 @@ export default function ProfileSection({ onOpen }) {
           <p className="text-xs text-gray-500">Me</p>
         </div>
       </div>
-      <div className="flex gap-2 items-end">
+      <div className="flex gap-2 items-center justify-end">
         <button
           onClick={onOpen}
-          className="text-gray-500 hover:bg-gray-100 cursor-pointer text-xl rounded-full p-2"
+          className="text-gray-500 hover:bg-gray-100 cursor-pointer rounded-full p-2"
         >
-          ⚙
+          <Settings />
         </button>
         <button
           onClick={logout}
-          className="text-red-700 hover:bg-gray-100 cursor-pointer text-xl rounded-full p-2"
+          className="text-red-700 hover:bg-red-100 cursor-pointer rounded-full p-2"
         >
-          [➔
+          <LogOut />
         </button>
       </div>
     </div>

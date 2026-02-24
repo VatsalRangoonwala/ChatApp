@@ -3,7 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import React, { useEffect, useState } from "react";
 import api from "../services/api";
 import ProfileSection from "./ProfileSection";
-import ProfileModal from "./ProfileModal";
+// import ProfileModal from "./ProfileModal";
 
 function Sidebar() {
   const { chats, openChat, unread, addChatIfNotExists, activeChat } = useChat();
@@ -118,7 +118,6 @@ function Sidebar() {
           </div>
         )}
       </div>
-      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
     </div>
   );
 }

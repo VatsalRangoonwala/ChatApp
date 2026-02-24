@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { useChat } from "../context/ChatContext";
 import { useAuth } from "../context/AuthContext";
+import { Send } from "lucide-react";
 
 export default function ChatInput() {
   const [text, setText] = useState("");
@@ -46,9 +47,9 @@ export default function ChatInput() {
       />
       <button
         disabled={isDisable()}
-        className="ml-2 text-2xl bg-green-600 text-white rounded-full px-2.5"
+        className="ml-2 items-center bg-green-600 hover:bg-green-700 text-white rounded-full px-2.5 cursor-pointer"
       >
-        ➤
+        <Send size={22}/>
       </button>
     </form>
   );
