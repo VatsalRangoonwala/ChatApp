@@ -270,6 +270,7 @@ export const ChatProvider = ({ children }) => {
       value={{
         chats,
         activeChat,
+        setActiveChat,
         messages,
         isTyping,
         unread,

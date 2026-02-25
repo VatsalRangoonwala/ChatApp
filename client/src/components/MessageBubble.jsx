@@ -4,7 +4,7 @@ import { useChat } from "../context/ChatContext";
 import api from "../services/api.js";
 import { formatMessageTime } from "../utils/formatTime.js";
 import React, { useEffect, useState } from "react";
-import { MoreVertical, Edit3, Trash2 } from "lucide-react";
+import { MoreVertical, Edit3, Trash2, Check, CheckCheck } from "lucide-react";
 
 function MessageBubble({ message }) {
   const { user } = useAuth();
@@ -58,15 +58,20 @@ function MessageBubble({ message }) {
     };
   }, [showMenu]);
 
+  const isDisable = () => {
+    if (editText.trim().length > 1) return false;
+    else return true;
+  };
+
   return (
     <div
-      className={`relative mb-2 flex group ${isMe ? "justify-end" : "justify-start"}`}
+      className={`message-enter relative mb-1.5 px-4 flex group ${isMe ? "justify-end" : "justify-start"}`}
     >
       <div
-        className={`px-4 py-1 rounded-xl max-w-[70%] flex justify-between gap-1 ${
+        className={`px-3 py-1 rounded-xl max-w-[75%] ${
           isMe
-            ? "bg-gray-900 text-white rounded-tr-none"
-            : "bg-white roun rounded-tl-none"
+            ? "bg-chat-sent text-chat-sent-foreground rounded-tr-none"
+            : "bg-chat-received text-chat-received-foreground rounded-tl-none"
         }`}
       >
         {message.deleted ? (
@@ -79,17 +84,20 @@ function MessageBubble({ message }) {
               className="px-2 py-1 rounded focus:outline-none"
             />
             <button
+              disabled={isDisable()}
               onClick={handleEdit}
-              className="text-black rounded-full px-2.5 bg-white"
+              className="text-chat-received-foreground rounded-full px-1 bg-primary"
             >
-              ✓
+              <Check />
             </button>
           </div>
         ) : (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap wrap-break-words">{message.text}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap wrap-break-words">
+            {message.text}
+          </p>
         )}
 
-        <div className="flex justify-end items-end gap-1 mt-2">
+        <div className="flex justify-end items-end gap-1">
           {message.edited && !message.deleted && (
             <span className="text-[10px] text-gray-400">Edited</span>
           )}
@@ -99,10 +107,14 @@ function MessageBubble({ message }) {
 
           {isMe && !message.deleted && (
             <span className="text-[10px] ml-1">
-              {message.status === "sent" && "✓"}
-              {message.status === "delivered" && "✓✓"}
+              {message.status === "sent" && (
+                <Check className="h-3.5 w-3.5 opacity-60" />
+              )}
+              {message.status === "delivered" && (
+                <CheckCheck className="h-3.5 w-3.5" />
+              )}
               {message.status === "seen" && (
-                <span className="text-blue-400">✓✓</span>
+                <CheckCheck className="h-3.5 w-3.5 text-blue-500" />
               )}
             </span>
           )}
@@ -120,14 +132,14 @@ function MessageBubble({ message }) {
         </button>
       )}
       {showMenu && (
-        <div className="p-2 absolute right-0 -top-16 bg-white shadow-lg rounded-md text-sm z-50">
+        <div className="p-2 absolute right-0 -top-16 bg-card shadow-lg rounded-md text-sm z-50">
           <button
             disabled={message.status === "seen"}
             onClick={() => {
               setEditing(true);
               setShowMenu(false);
             }}
-            className={`flex items-center gap-2 w-full text-left rounded px-3 py-2 hover:bg-gray-100 ${
+            className={`flex items-center gap-2 w-full text-left rounded px-3 py-2 hover:bg-secondary ${
               message.status === "seen" && "text-gray-300 cursor-not-allowed"
             }`}
           >
@@ -140,7 +152,7 @@ function MessageBubble({ message }) {
               handleDelete();
               setShowMenu(false);
             }}
-            className="flex items-center gap-2 w-full rounded text-left px-3 py-2 hover:bg-red-100 hover:text-red-600"
+            className="flex items-center gap-2 w-full rounded text-left px-3 py-2 hover:bg-secondary hover:text-red-600"
           >
             <Trash2 size={14} />
             Delete

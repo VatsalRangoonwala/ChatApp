@@ -4,8 +4,9 @@ import { useAuth } from "../context/AuthContext";
 import { PhotoProvider, PhotoView } from "react-photo-view";
 import "react-photo-view/dist/react-photo-view.css";
 import toast from "react-hot-toast";
-import { ArrowLeft, Camera, ImageUp } from "lucide-react";
+import { ArrowLeft, Camera } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Navbar } from "../components/Navbar";
 
 export default function ProfileModal() {
   const { user, login } = useAuth();
@@ -72,7 +73,7 @@ export default function ProfileModal() {
   //           <label
   //             htmlFor="avatar"
   //           >
-  //             <ImageUp size={25} className="bg-white text-gray-500 cursor-pointer" />
+  //             <Camera size={25} className="bg-white text-gray-500 cursor-pointer" />
   //           </label>
   //           <input
   //             hidden
@@ -97,7 +98,7 @@ export default function ProfileModal() {
   //       />
 
   //       <div className="flex justify-end gap-2">
-  //         <button onClick={onClose} className="px-3 py-1 border rounded">
+  //         <button className="px-3 py-1 border rounded">
   //           Cancel
   //         </button>
 
@@ -114,7 +115,7 @@ export default function ProfileModal() {
 
   return (
     <div className="flex h-screen flex-col bg-background">
-      {/* <Navbar /> */}
+      <Navbar />
       <div className="flex flex-1 items-start justify-center overflow-y-auto p-4 pt-8">
         <div className="fade-in w-full max-w-md">
           <button
@@ -129,12 +130,21 @@ export default function ProfileModal() {
             {/* Avatar */}
             <div className="mb-6 flex flex-col items-center">
               <div className="relative">
-                <img
-                  src={
-                    preview || "https://ui-avatars.com/api/?name=" + user.name
-                  }
-                  className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary"
-                />
+                <PhotoProvider>
+                  <PhotoView
+                    src={
+                      preview || "https://ui-avatars.com/api/?name=" + user.name
+                    }
+                  >
+                    <img
+                      src={
+                        preview ||
+                        "https://ui-avatars.com/api/?name=" + user.name
+                      }
+                      className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary"
+                    />
+                  </PhotoView>
+                </PhotoProvider>
                 <div className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                   <label htmlFor="avatar">
                     <Camera className="h-4 w-4" />
@@ -150,7 +160,7 @@ export default function ProfileModal() {
               <p className="mt-3 text-xs text-muted-foreground">{user.email}</p>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4">
+            <div className="space-y-4">
               <div>
                 <label className="mb-1.5 block text-sm font-medium text-foreground">
                   Name
@@ -190,13 +200,14 @@ export default function ProfileModal() {
               </div>
 
               <button
-                type="submit"
+                type="button"
+                onClick={handleSave}
                 disabled={saving}
                 className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50"
               >
                 {saving ? "Saving..." : "Save changes"}
               </button>
-            </form>
+            </div>
           </div>
         </div>
       </div>
