@@ -52,67 +52,7 @@ export default function ProfileModal() {
     setFile(selected);
     setPreview(URL.createObjectURL(selected));
   };
-
-  // return (
-  //   <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-  //     <div className="bg-white w-100 rounded-lg p-5 shadow-lg">
-  //       <h2 className="text-lg font-semibold mb-4">Edit Profile</h2>
-
-  //       <div className="relative flex flex-col items-center mb-4">
-  //         <PhotoProvider>
-  //           <PhotoView
-  //             src={preview || "https://ui-avatars.com/api/?name=" + user.name}
-  //           >
-  //             <img
-  //               src={preview || "https://ui-avatars.com/api/?name=" + user.name}
-  //               className="w-30 h-30 rounded-full object-cover mb-2 cursor-pointer border-4 border-gray-200"
-  //             />
-  //           </PhotoView>
-  //         </PhotoProvider>
-  //         <button className="absolute bottom-4 right-30">
-  //           <label
-  //             htmlFor="avatar"
-  //           >
-  //             <Camera size={25} className="bg-white text-gray-500 cursor-pointer" />
-  //           </label>
-  //           <input
-  //             hidden
-  //             id="avatar"
-  //             type="file"
-  //             onChange={handleImageChange}
-  //           />
-  //         </button>
-  //       </div>
-  //       <input
-  //         className="w-full border p-2 mb-3 rounded"
-  //         value={name}
-  //         onChange={(e) => setName(e.target.value)}
-  //         placeholder="Name"
-  //       />
-
-  //       <input
-  //         className="w-full border p-2 mb-3 rounded"
-  //         value={bio}
-  //         onChange={(e) => setBio(e.target.value)}
-  //         placeholder="Bio"
-  //       />
-
-  //       <div className="flex justify-end gap-2">
-  //         <button className="px-3 py-1 border rounded">
-  //           Cancel
-  //         </button>
-
-  //         <button
-  //           onClick={handleSave}
-  //           className="px-3 py-1 bg-blue-600 text-white rounded"
-  //         >
-  //           Save
-  //         </button>
-  //       </div>
-  //     </div>
-  //   </div>
-  // );
-
+  
   return (
     <div className="flex h-screen flex-col bg-background">
       <Navbar />
@@ -141,7 +81,7 @@ export default function ProfileModal() {
                         preview ||
                         "https://ui-avatars.com/api/?name=" + user.name
                       }
-                      className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary"
+                      className="object-cover flex h-20 w-20 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary"
                     />
                   </PhotoView>
                 </PhotoProvider>

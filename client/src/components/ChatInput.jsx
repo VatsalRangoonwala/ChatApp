@@ -27,19 +27,7 @@ export default function ChatInput() {
       onSubmit={submitHandler}
       className="relative border-t border-border bg-card p-3"
     >
-      {/* {showEmoji && (
-        <EmojiPicker
-          onSelect={(emoji) => setInput((prev) => prev + emoji)}
-          onClose={() => setShowEmoji(false)}
-        />
-      )} */}
       <div className="flex items-center gap-2">
-        {/* <button
-                    onClick={() => setShowEmoji(!showEmoji)}
-                    className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                  >
-                    <Smile className="h-5 w-5" />
-                  </button> */}
         <input
           type="text"
           value={text}
@@ -72,36 +60,4 @@ export default function ChatInput() {
       </div>
     </form>
   );
-
-  // return (
-  //   <form onSubmit={submitHandler} className="p-2 pt-0 flex">
-  //     <input
-  //       className="flex-1 p-2 rounded-3xl bg-white focus:outline-none px-4 border border-gray-200"
-  //       placeholder="Type a message..."
-  //       value={text}
-  //       onChange={(e) => {
-  //         setText(e.target.value);
-
-  //         const receiver = activeChat.participants.find(
-  //           (p) => p._id !== user._id,
-  //         );
-
-  //         if (e.target.value.trim().length > 0) {
-  //           startTyping(receiver._id);
-  //         }
-
-  //         clearTimeout(typingRef.current);
-  //         typingRef.current = setTimeout(() => {
-  //           stopTyping(receiver._id);
-  //         }, 800);
-  //       }}
-  //     />
-  //     <button
-  //       disabled={isDisable()}
-  //       className="ml-2 items-center bg-green-600 hover:bg-green-700 text-white rounded-full px-2.5 cursor-pointer"
-  //     >
-  //       <Send size={22} />
-  //     </button>
-  //   </form>
-  // );
 }

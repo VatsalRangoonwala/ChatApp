@@ -37,9 +37,6 @@ export const updateProfile = async (req, res) => {
     req.file.path,
     {
       folder: "avatars",
-      transformation: [
-        { width: 300, height: 300, crop: "fill" }
-      ],
     }
   );
 

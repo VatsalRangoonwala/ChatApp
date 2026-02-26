@@ -29,36 +29,6 @@ export default function Login() {
     }
   };
 
-  //   return (
-  //     <div className="flex items-center justify-center h-screen bg-gray-100">
-  //       <form
-  //         onSubmit={submitHandler}
-  //         className="bg-white p-6 rounded shadow w-80"
-  //       >
-  //         <h2 className="text-xl font-bold mb-4 text-center">Login</h2>
-  //         <input
-  //           className="w-full border p-2 mb-3"
-  //           placeholder="Email"
-  //           onChange={(e) => setEmail(e.target.value)}
-  //         />
-  //         <input
-  //           type="password"
-  //           className="w-full border p-2 mb-4"
-  //           placeholder="Password"
-  //           onChange={(e) => setPassword(e.target.value)}
-  //         />
-  //         <button className="w-full bg-blue-600 text-white py-2 rounded">
-  //           Login
-  //         </button>
-  //         <p className="text-center mt-3 text-sm">
-  //           Not registered?
-  //           <Link className="text-blue-500 ml-1" to="/register">
-  //             Create an account
-  //           </Link>
-  //         </p>
-  //       </form>
-  //     </div>
-  //   );
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="fade-in w-full max-w-sm">
@@ -80,6 +50,7 @@ export default function Login() {
             </label>
             <input
               type="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="alice@demo.com"
@@ -95,6 +66,7 @@ export default function Login() {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
+                name="password"
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="password123"
                 className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"

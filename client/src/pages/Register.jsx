@@ -38,42 +38,6 @@ export default function Register() {
     }
   };
 
-  //   return (
-  //     <div className="flex items-center justify-center h-screen bg-gray-100">
-  //       <form
-  //         className="bg-white p-6 rounded shadow w-80"
-  //         onSubmit={submitHandler}
-  //       >
-  //         <h2 className="text-xl font-bold mb-4 text-center">Register</h2>
-  //         <input
-  //           className="w-full border p-2 mb-3"
-  //           placeholder="Name"
-  //           onChange={(e) => setName(e.target.value)}
-  //         />
-  //         <input
-  //           className="w-full border p-2 mb-3"
-  //           placeholder="Email"
-  //           onChange={(e) => setEmail(e.target.value)}
-  //         />
-  //         <input
-  //           type="password"
-  //           className="w-full border p-2 mb-4"
-  //           placeholder="Password"
-  //           onChange={(e) => setPassword(e.target.value)}
-  //         />
-  //         <button className="w-full bg-green-600 text-white py-2 rounded">
-  //           Register
-  //         </button>
-  //         <p className="text-center mt-3 text-sm">
-  //           Already have an account?
-  //           <Link className="text-green-600 ml-1" to="/login">
-  //             Login
-  //           </Link>
-  //         </p>
-  //       </form>
-  //     </div>
-  //   );
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="fade-in w-full max-w-sm">
@@ -93,6 +57,7 @@ export default function Register() {
             </label>
             <input
               type="text"
+              name="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Your name"
@@ -106,6 +71,7 @@ export default function Register() {
             </label>
             <input
               type="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
@@ -121,6 +87,7 @@ export default function Register() {
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
+                name="password"
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Min 6 characters"
                 className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
@@ -146,6 +113,7 @@ export default function Register() {
             <input
               type="password"
               value={confirmPassword}
+              name="confirmPassword"
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Repeat your password"
               className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"

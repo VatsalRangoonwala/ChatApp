@@ -12,14 +12,13 @@ import { ArrowLeft, MessageSquare } from "lucide-react";
 export default function ChatWindow() {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
-  const { activeChat, messages, isTyping, loadOlderMessages, setActiveChat } =
+  const { activeChat, messages, isTyping, loadOlderMessages, setActiveChat, setShowSidebar, showSidebar } =
     useChat();
   const { user } = useAuth();
   const { socket } = useSocket();
   const otherUser = activeChat?.participants?.find((p) => p._id !== user._id);
   const isInitialLoad = useRef(true);
   const [viewProfile, setViewProfile] = useState(null);
-  const [showSidebar, setShowSidebar] = useState(true);
 
   useEffect(() => {
     isInitialLoad.current = true;
@@ -121,7 +120,9 @@ export default function ChatWindow() {
   }
 
   return (
-    <>
+    <div
+      className={`${!showSidebar || activeChat ? "flex" : "hidden"} flex-1 flex-col md:flex`}
+    >
       <div className="flex items-center gap-3 border-b border-border bg-card px-4 py-3">
         <button
           onClick={handleBackToSidebar}
@@ -129,7 +130,10 @@ export default function ChatWindow() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="relative">
+        <div
+          onClick={() => setViewProfile(otherUser)}
+          className="relative cursor-pointer"
+        >
           <img
             src={
               otherUser.avatar ||
@@ -172,7 +176,7 @@ export default function ChatWindow() {
             </p>
           </div>
         ) : (
-          <>
+          <div>
             {messages.map((msg, index) => {
               const currentDate = formatChatDate(msg.createdAt);
 
@@ -187,7 +191,7 @@ export default function ChatWindow() {
                 <div key={msg._id}>
                   {showDateHeader && (
                     <div className="sticky top-0 z-10 flex justify-center my-3">
-                      <span className="bg-white text-gray-600 text-xs px-3 py-1 rounded-full">
+                      <span className="bg-chat-received text-gray-400 text-xs px-3 py-1 rounded-full">
                         {currentDate}
                       </span>
                     </div>
@@ -209,77 +213,17 @@ export default function ChatWindow() {
               </div>
             )}
             <div ref={messagesEndRef} />
-          </>
+          </div>
+        )}
+        {viewProfile && (
+          <ProfileViewer
+            user={viewProfile}
+            open={!!otherUser}
+            onClose={() => setViewProfile(null)}
+          />
         )}
       </div>
       <ChatInput />
-    </>
-  );
-
-  return (
-    <div className="flex flex-col flex-1 bg-gray-200">
-      <div
-        onClick={() => setViewProfile(otherUser)}
-        className="flex items-center cursor-pointer bg-white border-b border-gray-200"
-      >
-        <img
-          src={
-            otherUser.avatar ||
-            "https://ui-avatars.com/api/?name=" + otherUser.name
-          }
-          className="ml-3 w-10 h-10 rounded-full object-cover"
-        />
-        <div className="p-3">
-          <p className="font-bold">{otherUser.name}</p>
-          <p
-            className={`text-sm ${isTyping ? "text-green-600" : "text-gray-500"}`}
-          >
-            {isTyping
-              ? "typing..."
-              : otherUser.isOnline
-                ? "Online"
-                : `Last seen ${formatChatDate(otherUser.updatedAt)} at ${formatMessageTime(otherUser.updatedAt)}`}
-          </p>
-        </div>
-      </div>
-
-      <div
-        onScroll={handleScroll}
-        ref={messagesContainerRef}
-        className="flex-1 overflow-y-auto bg-gray-200 px-15"
-      >
-        {messages.map((msg, index) => {
-          const currentDate = formatChatDate(msg.createdAt);
-
-          const previousDate =
-            index > 0 ? formatChatDate(messages[index - 1].createdAt) : null;
-
-          const showDateHeader = currentDate !== previousDate;
-
-          return (
-            <div key={msg._id}>
-              {showDateHeader && (
-                <div className="sticky top-0 z-10 flex justify-center my-3">
-                  <span className="bg-white text-gray-600 text-xs px-3 py-1 rounded-full">
-                    {currentDate}
-                  </span>
-                </div>
-              )}
-
-              <MessageBubble message={msg} />
-            </div>
-          );
-        })}
-
-        <div ref={messagesEndRef} />
-      </div>
-      <ChatInput />
-      {viewProfile && (
-        <ProfileViewer
-          user={viewProfile}
-          onClose={() => setViewProfile(null)}
-        />
-      )}
     </div>
   );
 }

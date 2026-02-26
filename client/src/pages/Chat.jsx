@@ -2,25 +2,15 @@ import Sidebar from "../components/Sidebar";
 import ChatWindow from "../components/ChatWindow";
 import { Navbar } from "../components/Navbar";
 import { useState } from "react";
-import { useChat } from "../context/ChatContext";
 
 export default function Chat() {
-  const [showSidebar, setShowSidebar] = useState(true);
-  const { activeChat } = useChat();
+  
   return (
     <div className="flex h-screen flex-col bg-background">
       <Navbar />
       <div className="flex flex-1 overflow-hidden">
-        <div
-          className={`${showSidebar ? "flex" : "hidden"} w-full flex-col md:flex md:w-80 lg:w-96`}
-        >
           <Sidebar />
-        </div>
-        <div
-          className={`${!showSidebar || activeChat ? "flex" : "hidden"} flex-1 flex-col md:flex`}
-        >
           <ChatWindow />
-        </div>
       </div>
     </div>
   );
@@ -30,16 +20,12 @@ export default function Chat() {
       <Navbar />
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - hidden on mobile when chat is active */}
-        <div
-          className={`${showSidebar ? "flex" : "hidden"} w-full flex-col md:flex md:w-80 lg:w-96`}
-        >
+        <div className={`${showSidebar ? "flex" : "hidden"} w-full flex-col md:flex md:w-80 lg:w-96`}>
           <ChatSidebar onSelectChat={handleSelectChat} />
         </div>
 
         {/* Chat Area */}
-        <div
-          className={`${!showSidebar || activeChat ? "flex" : "hidden"} flex-1 flex-col md:flex`}
-        >
+        <div className={`${!showSidebar || activeChat ? "flex" : "hidden"} flex-1 flex-col md:flex`}>
           {activeChat && activeContact ? (
             <>
               {/* Chat Header */}
@@ -50,43 +36,33 @@ export default function Chat() {
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
-                <div className="relative">
+                <button onClick={() => setProfileUser(activeContact)} className="relative cursor-pointer">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
                     {activeContact.avatar}
                   </div>
                   <span
                     className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${
-                      activeContact.status === "online"
-                        ? "bg-online"
-                        : activeContact.status === "away"
-                          ? "bg-yellow-500"
-                          : "bg-muted-foreground"
+                      activeContact.status === "online" ? "bg-online" : activeContact.status === "away" ? "bg-yellow-500" : "bg-muted-foreground"
                     }`}
                   />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-foreground">
-                    {activeContact.name}
-                  </h3>
+                </button>
+                <button onClick={() => setProfileUser(activeContact)} className="text-left cursor-pointer">
+                  <h3 className="text-sm font-semibold text-foreground hover:underline">{activeContact.name}</h3>
                   <p className="text-xs text-muted-foreground">
                     {isTyping === activeChat ? (
                       <span className="text-typing">typing...</span>
-                    ) : activeContact.status === "online" ? (
-                      "Online"
                     ) : (
-                      `Last seen recently`
+                      activeContact.status === "online" ? "Online" : `Last seen recently`
                     )}
                   </p>
-                </div>
+                </button>
               </div>
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto chat-pattern py-4">
                 {conversation.length === 0 ? (
                   <div className="flex h-full items-center justify-center">
-                    <p className="text-sm text-muted-foreground">
-                      Start the conversation! 👋
-                    </p>
+                    <p className="text-sm text-muted-foreground">Start the conversation! 👋</p>
                   </div>
                 ) : (
                   <>
@@ -95,9 +71,7 @@ export default function Chat() {
                         key={msg.id}
                         message={msg}
                         isSent={msg.senderId === user?.id}
-                        onDelete={
-                          msg.senderId === user?.id ? deleteMessage : undefined
-                        }
+                        onDelete={msg.senderId === user?.id ? deleteMessage : undefined}
                       />
                     ))}
                     {isTyping === activeChat && (
@@ -157,9 +131,7 @@ export default function Chat() {
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
                   <MessageSquare className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  ChatApp
-                </h3>
+                <h3 className="text-lg font-semibold text-foreground">ChatApp</h3>
                 <p className="max-w-xs text-sm text-muted-foreground">
                   Select a conversation from the sidebar to start chatting
                 </p>
@@ -168,6 +140,15 @@ export default function Chat() {
           )}
         </div>
       </div>
+      <UserProfileDialog
+        user={profileUser}
+        open={!!profileUser}
+        onClose={() => setProfileUser(null)}
+        onMessage={(id) => {
+          setActiveChat(id);
+          setShowSidebar(false);
+        }}
+      />
     </div>
   );
 }

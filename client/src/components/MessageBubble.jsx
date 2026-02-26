@@ -75,7 +75,7 @@ function MessageBubble({ message }) {
         }`}
       >
         {message.deleted ? (
-          <p className="italic text-gray-400">This message was deleted</p>
+          <p className="italic text-sm text-gray-400">This message was deleted</p>
         ) : editing ? (
           <div className="flex gap-2">
             <input
@@ -152,7 +152,7 @@ function MessageBubble({ message }) {
               handleDelete();
               setShowMenu(false);
             }}
-            className="flex items-center gap-2 w-full rounded text-left px-3 py-2 hover:bg-secondary hover:text-red-600"
+            className="flex items-center gap-2 w-full rounded text-left px-3 py-2 hover:text-destructive hover:bg-destructive/10 transition-colors"
           >
             <Trash2 size={14} />
             Delete

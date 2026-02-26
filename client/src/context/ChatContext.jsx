@@ -16,6 +16,7 @@ export const ChatProvider = ({ children }) => {
   const [unread, setUnread] = useState({});
   const [page, setPage] = useState(1);
   const [loadingOlder, setLoadingOlder] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
 
   // Fetch chats
   useEffect(() => {
@@ -269,6 +270,8 @@ export const ChatProvider = ({ children }) => {
     <ChatContext.Provider
       value={{
         chats,
+        showSidebar,
+        setShowSidebar,
         activeChat,
         setActiveChat,
         messages,
