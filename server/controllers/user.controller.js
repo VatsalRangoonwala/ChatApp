@@ -52,3 +52,15 @@ export const updateProfile = async (req, res) => {
 
   res.json(updatedUser);
 };
+
+export const savePushSubscription = async (req, res) => {
+
+  const user = await User.findById(req.user._id);
+
+  user.pushSubscription = req.body.subscription;
+
+  await user.save();
+
+  res.json({ success: true });
+
+};

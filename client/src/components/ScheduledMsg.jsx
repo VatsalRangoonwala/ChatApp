@@ -98,11 +98,9 @@ export const ScheduledMessagesList = () => {
         </div>
         <div className="max-h-64 overflow-y-auto">
           {scheduledMessages.map((sm) => {
-            const contact = users.find((u) => u.id === sm.receiverId);
-            const schedDate = new Date(sm.scheduledTime);
             return (
               <div
-                key={sm.id}
+                key={sm._id}
                 className="border-b border-border/50 px-4 py-3 last:border-0 hover:bg-secondary/30 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">

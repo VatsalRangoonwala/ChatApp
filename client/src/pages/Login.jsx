@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, MessageSquare } from "lucide-react";
+import { requestNotificationPermission, subscribeToPush } from "../utils/pushNotification.js";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -19,6 +20,16 @@ export default function Login() {
       setLoading(true);
       const { data } = await api.post("/auth/login", { email, password });
       login(data);
+      const enablePush = async () => {
+        const allowed = await requestNotificationPermission();
+
+        if (allowed) {
+          await subscribeToPush();
+        }
+      };
+
+      enablePush();
+
       setLoading(false);
       toast.success(data?.message || "Welcome back!");
       navigate("/");

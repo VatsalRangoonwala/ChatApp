@@ -22,7 +22,10 @@ export default function App() {
         <Route path="/" element={user ? <Chat /> : <Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/profile" element={user ? <Profile /> : <Navigate to="/login" />} />
+        <Route
+          path="/profile"
+          element={user ? <Profile /> : <Navigate to="/login" />}
+        />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

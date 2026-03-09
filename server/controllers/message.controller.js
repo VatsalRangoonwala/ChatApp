@@ -1,5 +1,7 @@
 import Message from "../models/message.model.js";
 import Chat from "../models/chat.model.js";
+import User from "../models/user.model.js";
+import webpush from "../utils/webPush.js";
 
 // SEND MESSAGE
 export const sendMessage = async (req, res) => {
@@ -30,6 +32,19 @@ export const sendMessage = async (req, res) => {
     message = await message.populate("sender", "name email");
     message = await message.populate("receiver", "name email");
 
+    const receiver = await User.findById(receiverId);
+
+    if (!receiver.isOnline && receiver.pushSubscription) {
+      const payload = JSON.stringify({
+        title: message.sender.name,
+        body: message.text,
+        chatId: message.chatId,
+      });
+
+      webpush
+        .sendNotification(receiver.pushSubscription, payload)
+        .catch(console.error);
+    }
     res.status(201).json(message);
   } catch (error) {
     res.status(500).json({ message: error.message });

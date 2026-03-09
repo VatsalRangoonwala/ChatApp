@@ -149,7 +149,7 @@ export const ChatProvider = ({ children }) => {
       socket.off("user-online");
       socket.off("user-offline");
     };
-  }, [socket]);
+  }, [socket, activeChat]);
 
   // Fetch messages
   const openChat = async (chat) => {

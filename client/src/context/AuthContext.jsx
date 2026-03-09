@@ -1,4 +1,8 @@
 import { createContext, useContext, useState } from "react";
+import {
+  requestNotificationPermission,
+  subscribeToPush,
+} from "../utils/pushNotification.js";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -10,7 +14,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("user", JSON.stringify(data));
     setUser(data);
   };
-
   return (
     <AuthContext.Provider value={{ user, login, setUser }}>
       {children}
