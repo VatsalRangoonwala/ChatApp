@@ -42,6 +42,7 @@ export const fetchChats = async (req, res) => {
       receiver: req.user._id,
       status: { $ne: "seen" },
       deleted: false,
+      isScheduled: false,
     }).select("chatId");
 
     const unreadMap = {};

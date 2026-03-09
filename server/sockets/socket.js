@@ -54,7 +54,7 @@ const socketHandler = (io) => {
 
       const receiverSocketId = onlineUsers.get(receiverId);
 
-      if (receiverSocketId) {
+      if (receiverSocketId && !message.isScheduled) {
         io.to(receiverSocketId).emit("receive-message", message);
 
         await Message.findByIdAndUpdate(message._id, {
@@ -110,6 +110,10 @@ const socketHandler = (io) => {
       console.log("User disconnected:", userId);
     });
   });
+};
+
+export const getSocketId = (userId) => {
+  return onlineUsers.get(userId);
 };
 
 export default socketHandler;

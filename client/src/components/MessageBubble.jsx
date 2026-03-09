@@ -64,7 +64,7 @@ function MessageBubble({ message }) {
   };
 
   return (
-    <div
+    !message.isScheduled && <div
       className={`message-enter relative mb-1.5 px-4 flex group ${isMe ? "justify-end" : "justify-start"}`}
     >
       <div
@@ -75,7 +75,9 @@ function MessageBubble({ message }) {
         }`}
       >
         {message.deleted ? (
-          <p className="italic text-sm text-gray-400">This message was deleted</p>
+          <p className="italic text-sm text-gray-400">
+            This message was deleted
+          </p>
         ) : editing ? (
           <div className="flex gap-2">
             <input
@@ -102,7 +104,9 @@ function MessageBubble({ message }) {
             <span className="text-[10px] text-gray-400">Edited</span>
           )}
           <span className="text-[10px] opacity-70 text-nowrap">
-            {formatMessageTime(message.createdAt)}
+            {message.scheduledAt
+              ? formatMessageTime(message.scheduledAt)
+              : formatMessageTime(message.createdAt)}
           </span>
 
           {isMe && !message.deleted && (

@@ -30,7 +30,7 @@ const messageSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["sent", "delivered", "seen"],
+      enum: ["sent", "delivered", "seen", "scheduled"],
       default: "sent",
     },
     edited: {
@@ -38,6 +38,15 @@ const messageSchema = new mongoose.Schema(
       default: false,
     },
     deleted: {
+      type: Boolean,
+      default: false,
+    },
+    scheduledAt: {
+      type: Date,
+      default: null,
+    },
+
+    isScheduled: {
       type: Boolean,
       default: false,
     },

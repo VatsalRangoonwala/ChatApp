@@ -10,6 +10,7 @@ import chatRouter from "./routes/chat.route.js";
 import msgRouter from "./routes/message.route.js";
 import userRouter from "./routes/user.route.js";
 import socketHandler from "./sockets/socket.js";
+import "./utils/scheduler.js";
 
 dotenv.config();
 connectDB();
@@ -18,7 +19,7 @@ const app = express();
 const server = http.createServer(app);
 
 // Socket Setup
-const io = new Server(server, {
+export const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL,
   },

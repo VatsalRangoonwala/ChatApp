@@ -8,6 +8,7 @@ import ChatInput from "./ChatInput";
 import ProfileViewer from "./ProfileViewer.jsx";
 import { formatMessageTime } from "../utils/formatTime.js";
 import { ArrowLeft, MessageSquare } from "lucide-react";
+import { ScheduledMessagesList } from "./ScheduledMsg.jsx";
 
 export default function ChatWindow() {
   const messagesEndRef = useRef(null);
@@ -162,6 +163,7 @@ export default function ChatWindow() {
             )}
           </p>
         </div>
+        <ScheduledMessagesList />
       </div>
 
       <div

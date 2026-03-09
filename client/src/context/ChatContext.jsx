@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import api from "../services/api.js";
 import { useAuth } from "./AuthContext";
 import { useSocket } from "./SocketContext";
+import toast from "react-hot-toast";
 
 const ChatContext = createContext();
 
@@ -12,11 +13,13 @@ export const ChatProvider = ({ children }) => {
   const [chats, setChats] = useState([]);
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [scheduledMessages, setScheduledMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [unread, setUnread] = useState({});
   const [page, setPage] = useState(1);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [scheduleTime, setScheduleTime] = useState(null);
 
   // Fetch chats
   useEffect(() => {
@@ -25,7 +28,7 @@ export const ChatProvider = ({ children }) => {
         (setChats(data.chats), setUnread(data.unreadMap));
       });
     }
-  }, [user, messages, chats]);
+  }, [user]);
 
   // Socket listeners
   useEffect(() => {
@@ -65,6 +68,10 @@ export const ChatProvider = ({ children }) => {
         }));
       }
 
+      setScheduledMessages((prev) =>
+        prev.filter((msg) => msg._id !== message._id),
+      );
+
       setChats((prevChats) => {
         const chatIndex = prevChats.findIndex((c) => c._id === message.chatId);
 
@@ -79,7 +86,6 @@ export const ChatProvider = ({ children }) => {
         const remainingChats = prevChats.filter(
           (c) => c._id !== message.chatId,
         );
-
         return [updatedChat, ...remainingChats];
       });
     });
@@ -143,7 +149,7 @@ export const ChatProvider = ({ children }) => {
       socket.off("user-online");
       socket.off("user-offline");
     };
-  }, [socket, activeChat]);
+  }, [socket]);
 
   // Fetch messages
   const openChat = async (chat) => {
@@ -151,6 +157,8 @@ export const ChatProvider = ({ children }) => {
     setPage(1);
     const { data } = await api.get(`/message/${chat._id}`);
     setMessages(data);
+    const scheduled = data.filter((msg) => msg.isScheduled);
+    setScheduledMessages(scheduled);
     data.forEach((msg) => {
       if (msg.sender._id !== user._id && msg.status !== "seen") {
         socket.emit("message-seen", {
@@ -163,7 +171,6 @@ export const ChatProvider = ({ children }) => {
       ...prev,
       [chat._id]: 0,
     }));
-    // setUnread(0);
   };
 
   const loadOlderMessages = async () => {
@@ -188,37 +195,42 @@ export const ChatProvider = ({ children }) => {
   // Send message
   const sendMessage = async (text) => {
     if (!text || !activeChat) return;
-
     const receiver = activeChat.participants.find((p) => p._id !== user._id);
 
     const { data } = await api.post("/message", {
       chatId: activeChat._id,
       receiverId: receiver._id,
-      text,
+      text: text,
+      scheduledAt: scheduleTime || null,
     });
 
-    setMessages((prev) => [...prev, data]);
+    if (scheduleTime) {
+      setScheduledMessages((prev) => [...prev, data]);
+    } else {
+      setMessages((prev) => [...prev, data]);
 
-    setChats((prevChats) => {
-      const chatIndex = prevChats.findIndex((c) => c._id === data.chatId);
+      setChats((prevChats) => {
+        const chatIndex = prevChats.findIndex((c) => c._id === data.chatId);
 
-      if (chatIndex === -1) return prevChats;
+        if (chatIndex === -1) return prevChats;
 
-      const updatedChat = {
-        ...prevChats[chatIndex],
-        lastMessage: data,
-        updatedAt: data.createdAt,
-      };
+        const updatedChat = {
+          ...prevChats[chatIndex],
+          lastMessage: data,
+          updatedAt: data.createdAt,
+        };
 
-      const remainingChats = prevChats.filter((c) => c._id !== data.chatId);
+        const remainingChats = prevChats.filter((c) => c._id !== data.chatId);
 
-      return [updatedChat, ...remainingChats];
-    });
-
+        return [updatedChat, ...remainingChats];
+      });
+    }
     socket.emit("send-message", {
       receiverId: receiver._id,
       message: data,
     });
+
+    setScheduleTime(null);
   };
 
   // Expose typing emitters
@@ -255,6 +267,23 @@ export const ChatProvider = ({ children }) => {
     );
   };
 
+  const deleteScheduledMessage = async (msg) => {
+    try {
+      const res = await api.delete(`/message/delete/schedule/${msg._id}`);
+      toast.success(res.data.message);
+      setScheduledMessages((prev) => prev.filter((m) => m._id !== msg._id));
+    } catch (error) {
+      toast.error(err.response?.data?.message || "Delete failed");
+    }
+  };
+
+  const sendScheduledNow = (msg) => {
+    const sm = scheduledMessages.find((m) => m._id === msg._id);
+    if (sm) {
+      sendMessage(sm.text.trim());
+      setScheduledMessages((prev) => prev.filter((m) => m._id !== sm._id));
+    }
+  };
 
   const logout = () => {
     localStorage.removeItem("user");
@@ -277,6 +306,8 @@ export const ChatProvider = ({ children }) => {
         messages,
         isTyping,
         unread,
+        scheduleTime,
+        setScheduleTime,
         openChat,
         sendMessage,
         startTyping,
@@ -286,6 +317,9 @@ export const ChatProvider = ({ children }) => {
         updateMessageLocal,
         deleteMessageLocal,
         logout,
+        deleteScheduledMessage,
+        scheduledMessages,
+        sendScheduledNow,
       }}
     >
       {children}

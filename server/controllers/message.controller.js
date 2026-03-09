@@ -3,7 +3,7 @@ import Chat from "../models/chat.model.js";
 
 // SEND MESSAGE
 export const sendMessage = async (req, res) => {
-  const { chatId, text, receiverId } = req.body;
+  const { chatId, text, receiverId, scheduledAt } = req.body;
 
   if (!chatId || !receiverId || !text) {
     return res.status(400).json({ message: "Invalid data" });
@@ -15,12 +15,17 @@ export const sendMessage = async (req, res) => {
       sender: req.user._id,
       receiver: receiverId,
       text,
+      scheduledAt: scheduledAt || null,
+      isScheduled: !!scheduledAt,
+      status: scheduledAt ? "scheduled" : "sent",
     });
 
     // Update last message
-    await Chat.findByIdAndUpdate(chatId, {
-      lastMessage: message._id,
-    });
+    if (!scheduledAt) {
+      await Chat.findByIdAndUpdate(chatId, {
+        lastMessage: message._id,
+      });
+    }
 
     message = await message.populate("sender", "name email");
     message = await message.populate("receiver", "name email");
@@ -107,7 +112,16 @@ export const fetchMessages = async (req, res) => {
   const limit = 20;
 
   try {
-    const messages = await Message.find({ chatId })
+    const messages = await Message.find({
+      chatId,
+      $or: [
+        { sender: req.user._id }, // sender sees everything
+        {
+          receiver: req.user._id,
+          status: { $in: ["sent", "delivered", "seen"] }, // receiver sees only sent
+        },
+      ],
+    })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -115,6 +129,18 @@ export const fetchMessages = async (req, res) => {
       .populate("receiver", "name email");
 
     res.json(messages.reverse());
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteBeforeSent = async (req, res) => {
+  try {
+    await Message.findByIdAndDelete(req.params.id);
+    return res.status(200).json({
+      success: true,
+      message: "Scheduled message deleted",
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

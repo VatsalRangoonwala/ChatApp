@@ -39,7 +39,6 @@ export default function ProfileModal() {
       login({ ...user, ...data });
     } catch (err) {
       toast.error(err.response?.data?.message || "Profile update failed");
-      // console.log(err);
     } finally {
       setSaving(false);
     }
