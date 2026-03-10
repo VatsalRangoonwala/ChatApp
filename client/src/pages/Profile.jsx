@@ -12,11 +12,11 @@ export default function ProfileModal() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const [name, setName] = useState(user.name);
-  const [bio, setBio] = useState(user.bio || "");
+  const [bio, setBio] = useState(user?.bio || "");
   const [preview, setPreview] = useState(user.avatar);
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
-
+console.log(bio,user,"bio")
   const handleSave = async () => {
     try {
       setSaving(true);

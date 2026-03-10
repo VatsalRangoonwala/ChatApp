@@ -45,14 +45,14 @@ export const ScheduleDialog = ({ text, onScheduled, onClose }) => {
       <p className="text-xs text-muted-foreground mb-3 truncate rounded-lg bg-secondary/50 px-3 py-2">
         "{text}"
       </p>
-      <div className="flex gap-2 mb-3">
+      <div className="mb-3">
         <input
           type="datetime-local"
           onChange={(e) => {
             setScheduleTime(e.target.value);
             setError("");
           }}
-          className="flex-1 rounded-lg bg-input px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary scheme-dark"
+          className="w-full rounded-lg bg-input px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary scheme-dark"
         />
       </div>
       {error && <p className="text-xs text-destructive mb-2">{error}</p>}

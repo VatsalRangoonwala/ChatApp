@@ -4,7 +4,12 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Eye, EyeOff, MessageSquare } from "lucide-react";
-import { requestNotificationPermission, subscribeToPush } from "../utils/pushNotification.js";
+import {
+  requestNotificationPermission,
+  subscribeToPush,
+} from "../utils/pushNotification.js";
+import { GoogleLogin } from "@react-oauth/google";
+// import jwt_decode from "jwt-decode";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -54,6 +59,28 @@ export default function Login() {
           </p>
         </div>
 
+        <GoogleLogin
+          onSuccess={async (credentialResponse) => {
+            // const decoded = jwt_decode(credentialResponse.credential);
+
+            const res = await api.post("/auth/google", {
+              token: credentialResponse.credential,
+            });
+
+            login(res.data);
+            navigate("/");
+          }}
+          onError={() => {
+            console.log("Google login failed");
+          }}
+        />
+
+        <div className="relative my-4 flex items-center gap-4">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted-foreground">or</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
         <form onSubmit={submitHandler} className="space-y-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-foreground">
@@ -94,6 +121,15 @@ export default function Login() {
                 )}
               </button>
             </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Link
+              to="/forgotPassword"
+              className="text-xs text-primary hover:underline"
+            >
+              Forgot password?
+            </Link>
           </div>
 
           <button

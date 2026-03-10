@@ -1,8 +1,4 @@
 import { createContext, useContext, useState } from "react";
-import {
-  requestNotificationPermission,
-  subscribeToPush,
-} from "../utils/pushNotification.js";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {

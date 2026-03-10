@@ -6,6 +6,8 @@ import Profile from "./pages/Profile";
 import { useAuth } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
 import NotFound from "./pages/NotFound";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 export default function App() {
   const { user } = useAuth();
@@ -22,6 +24,8 @@ export default function App() {
         <Route path="/" element={user ? <Chat /> : <Navigate to="/login" />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgotPassword" element={<ForgotPassword />} />
+        <Route path="/resetPassword/:token" element={<ResetPassword />} />
         <Route
           path="/profile"
           element={user ? <Profile /> : <Navigate to="/login" />}
