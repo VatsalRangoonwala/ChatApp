@@ -3,7 +3,8 @@ import api from "../services/api.js";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, MessageSquare } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, MessageSquare } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/InputOTP.jsx";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -12,6 +13,9 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [step, setStep] = useState("form");
+  const [otp, setOtp] = useState("");
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -27,10 +31,46 @@ export default function Register() {
         email,
         password,
       });
-      login(data);
       setLoading(false);
       toast.success(data?.message);
+      setStep("otp");
+    } catch (error) {
+      toast.error(error.response?.data?.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    try {
+      if (otp.length < 6) {
+        setErrors({ otp: "Please enter the full 6-digit code" });
+        return;
+      }
+      setErrors({});
+      setLoading(true);
+      const { data } = await api.post("/auth/verifyEmail", {
+        email,
+        otp,
+      });
+      login(data);
+      toast.success("Email verified");
+      setLoading(false);
       navigate("/");
+    } catch (error) {
+      toast.error(error.response?.data?.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.post("/auth/resendOtp", { email });
+      setOtp("");
+      toast.success(data?.message);
+      setLoading(false);
     } catch (error) {
       toast.error(error.response?.data?.message);
     } finally {
@@ -45,106 +85,171 @@ export default function Register() {
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20">
             <MessageSquare className="h-7 w-7 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Create account</h1>
+          <h1 className="text-2xl font-bold text-foreground">
+            {step === "form" ? "Create account" : "Verify email"}
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Start chatting in seconds
+            {step === "form"
+              ? "Start chatting in seconds"
+              : `Enter the 6-digit code sent to ${email}`}
           </p>
         </div>
-        <form onSubmit={submitHandler} className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Name
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name"
-              className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-            />
-          </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-            />
-          </div>
+        {step === "otp" ? (
+          <div className="space-y-6">
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+            {errors.otp && (
+              <p className="text-center text-xs text-destructive">
+                {errors.otp}
+              </p>
+            )}
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Password
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                name="password"
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min 6 characters"
-                className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-              />
+            <button
+              onClick={handleVerifyOtp}
+              disabled={loading || otp.length < 6}
+              className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+                  Verifying...
+                </span>
+              ) : (
+                "Verify & Create Account"
+              )}
+            </button>
+
+            <div className="flex items-center justify-between">
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => {
+                  setStep("form");
+                  setOtp("");
+                  setErrors({});
+                }}
+                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+              <button
+                onClick={handleResendOtp}
+                disabled={loading}
+                className="text-sm text-primary hover:underline disabled:opacity-50"
+              >
+                Resend code
               </button>
             </div>
           </div>
+        ) : (
+          <>
+            <form onSubmit={submitHandler} className="space-y-4">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                />
+              </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-foreground">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              name="confirmPassword"
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repeat your password"
-              className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
-            />
-          </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                />
+              </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
-                Creating account...
-              </span>
-            ) : (
-              "Create account"
-            )}
-          </button>
-        </form>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                  Password
+                </label>
+                <div className="relative">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    name="password"
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min 6 characters"
+                    className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 pr-10 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
 
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link
-            to="/login"
-            className="font-medium text-primary hover:underline"
-          >
-            Sign in
-          </Link>
-        </p>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-foreground">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  name="confirmPassword"
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Repeat your password"
+                  className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground/30 border-t-primary-foreground" />
+                    Creating account...
+                  </span>
+                ) : (
+                  "Create account"
+                )}
+              </button>
+            </form>
+
+            <p className="mt-6 text-center text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="font-medium text-primary hover:underline"
+              >
+                Sign in
+              </Link>
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
