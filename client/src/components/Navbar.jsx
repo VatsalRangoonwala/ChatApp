@@ -19,8 +19,8 @@ export const Navbar = () => {
         onClick={() => navigate("/")}
         className="flex items-center gap-2 text-primary font-semibold text-lg hover:opacity-80 transition-opacity"
       >
-        <MessageSquare className="h-5 w-5" />
-        <span className="hidden sm:inline">ChatApp</span>
+        <img src="/con.png" alt="logo" className="h-6 w-6" />
+        <span className="hidden sm:inline">Pounce</span>
       </button>
 
       <nav className="flex items-center gap-1">

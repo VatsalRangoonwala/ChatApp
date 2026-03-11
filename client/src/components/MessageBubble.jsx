@@ -27,7 +27,6 @@ function MessageBubble({ message }) {
       setEditing(false);
     } catch (err) {
       toast.error(err.response?.data?.message || "Edit failed");
-      console.error(err);
     }
   };
 
@@ -40,7 +39,6 @@ function MessageBubble({ message }) {
       toast.success("Message deleted");
     } catch (err) {
       toast.error(err.response?.data?.message || "Delete failed");
-      // console.error(err);
     }
   };
 

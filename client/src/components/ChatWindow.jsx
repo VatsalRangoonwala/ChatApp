@@ -13,8 +13,15 @@ import { ScheduledMessagesList } from "./ScheduledMsg.jsx";
 export default function ChatWindow() {
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
-  const { activeChat, messages, isTyping, loadOlderMessages, setActiveChat, setShowSidebar, showSidebar } =
-    useChat();
+  const {
+    activeChat,
+    messages,
+    isTyping,
+    loadOlderMessages,
+    setActiveChat,
+    setShowSidebar,
+    showSidebar,
+  } = useChat();
   const { user } = useAuth();
   const { socket } = useSocket();
   const otherUser = activeChat?.participants?.find((p) => p._id !== user._id);
@@ -109,9 +116,9 @@ export default function ChatWindow() {
       <div className="hidden flex-1 items-center justify-center md:flex">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-            <MessageSquare className="h-8 w-8 text-primary" />
+            <img src="/con.png" alt="logo" className="w-10 h-10" />
           </div>
-          <h3 className="text-lg font-semibold text-foreground">ChatApp</h3>
+          <h3 className="text-lg font-semibold text-foreground">Pounce</h3>
           <p className="max-w-xs text-sm text-muted-foreground">
             Select a conversation from the sidebar to start chatting
           </p>

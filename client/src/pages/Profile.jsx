@@ -16,7 +16,6 @@ export default function ProfileModal() {
   const [preview, setPreview] = useState(user.avatar);
   const [file, setFile] = useState(null);
   const [saving, setSaving] = useState(false);
-console.log(bio,user,"bio")
   const handleSave = async () => {
     try {
       setSaving(true);

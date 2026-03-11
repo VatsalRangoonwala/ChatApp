@@ -31,6 +31,5 @@ cron.schedule("*/10 * * * * *", async () => {
     const sender = getSocketId(msg.sender._id.toString());
     io.to(sender).emit("receive-message", msg);
     io.to(receiver).emit("receive-message", msg);
-    console.log("Scheduled message sent");
   }
 });
