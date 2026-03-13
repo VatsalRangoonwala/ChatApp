@@ -57,8 +57,6 @@ const socketHandler = (io) => {
       }
     }
 
-    // console.log("User connected:", userId);
-
     //  PRIVATE MESSAGE
     socket.on("send-message", async (data) => {
       const { receiverId, message } = data;
@@ -118,7 +116,6 @@ const socketHandler = (io) => {
       onlineUsers.delete(userId);
       await User.findByIdAndUpdate(userId, { isOnline: false });
       socket.broadcast.emit("user-offline", userId);
-      console.log("User disconnected:", userId);
     });
   });
 };
