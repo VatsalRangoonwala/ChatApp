@@ -47,7 +47,7 @@ export default function Register() {
       toast.success(data?.message);
       setStep("otp");
     } catch (error) {
-      toast.error(error.response?.data?.message);
+      toast.error(error.response?.data?.message || "Failed to register user");
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ export default function Register() {
       setLoading(false);
       navigate("/");
     } catch (error) {
-      toast.error(error.response?.data?.message);
+      toast.error(error.response?.data?.message || "Email verification failed");
     } finally {
       setLoading(false);
     }
@@ -84,7 +84,7 @@ export default function Register() {
       toast.success(data?.message);
       setLoading(false);
     } catch (error) {
-      toast.error(error.response?.data?.message);
+      toast.error(error.response?.data?.message || "Failed to sent OTP");
     } finally {
       setLoading(false);
     }
@@ -178,7 +178,9 @@ export default function Register() {
                   placeholder="Your name"
                   className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
-                {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name}</p>}
+                {errors.name && (
+                  <p className="mt-1 text-xs text-destructive">{errors.name}</p>
+                )}
               </div>
 
               <div>
@@ -193,7 +195,11 @@ export default function Register() {
                   placeholder="you@example.com"
                   className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
-                {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
+                {errors.email && (
+                  <p className="mt-1 text-xs text-destructive">
+                    {errors.email}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -221,7 +227,11 @@ export default function Register() {
                     )}
                   </button>
                 </div>
-                {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password}</p>}
+                {errors.password && (
+                  <p className="mt-1 text-xs text-destructive">
+                    {errors.password}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -236,7 +246,11 @@ export default function Register() {
                   placeholder="Repeat your password"
                   className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
-                {errors.confirmPassword && <p className="mt-1 text-xs text-destructive">{errors.confirmPassword}</p>}
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-xs text-destructive">
+                    {errors.confirmPassword}
+                  </p>
+                )}
               </div>
 
               <button

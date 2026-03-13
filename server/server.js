@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
+import helmet from "helmet";
 import { Server } from "socket.io";
 
 import connectDB from "./config/db.js";
@@ -33,6 +34,7 @@ app.use(
     credentials: true,
   }),
 );
+app.use(helmet());
 app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/chat", chatRouter);
