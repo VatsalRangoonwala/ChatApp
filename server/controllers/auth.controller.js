@@ -8,6 +8,36 @@ import otpGenerator from "otp-generator";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const getCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: "/",
+  };
+};
+
+const serializeUser = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  bio: user.bio,
+  avatar: user.avatar,
+});
+
+const sendAuthResponse = (res, user, statusCode = 200, message) => {
+  res.cookie("token", generateToken(user._id), getCookieOptions());
+
+  return res.status(statusCode).json({
+    success: true,
+    ...(message ? { message } : {}),
+    ...serializeUser(user),
+  });
+};
+
 // REGISTER
 export const registerUser = async (req, res) => {
   try {
@@ -48,12 +78,7 @@ export const registerUser = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "OTP sent to email",
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      bio: user.bio,
-      avatar: user.avatar,
-      token: generateToken(user._id),
+      ...serializeUser(user),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -83,16 +108,7 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    res.json({
-      success: true,
-      message: "Logged in successfully",
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      bio: user.bio,
-      avatar: user.avatar,
-      token: generateToken(user._id),
-    });
+    return sendAuthResponse(res, user, 200, "Logged in successfully");
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -123,16 +139,7 @@ export const googleLogin = async (req, res) => {
       });
     }
 
-    const jwt = generateToken(user._id);
-
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      avatar: user.avatar,
-      token: jwt,
-      bio: user.bio,
-    });
+    return sendAuthResponse(res, user);
   } catch (error) {
     res.status(500).json({ message: "Google login failed" });
   }
@@ -223,16 +230,7 @@ export const verifyEmailOTP = async (req, res) => {
 
   await user.save();
 
-  res.json({
-    success: true,
-    message: "Email verified successfully",
-    _id: user._id,
-    name: user.name,
-    email: user.email,
-    bio: user.bio,
-    avatar: user.avatar,
-    token: generateToken(user._id),
-  });
+  return sendAuthResponse(res, user, 200, "Email verified successfully");
 };
 
 export const resendOTP = async (req, res) => {
@@ -259,4 +257,20 @@ export const resendOTP = async (req, res) => {
   });
 
   res.json({ message: "OTP sent again" });
+};
+
+export const getCurrentUser = async (req, res) => {
+  res.json({
+    success: true,
+    ...serializeUser(req.user),
+  });
+};
+
+export const logoutUser = async (req, res) => {
+  res.clearCookie("token", getCookieOptions());
+
+  res.json({
+    success: true,
+    message: "Logged out successfully",
+  });
 };

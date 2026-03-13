@@ -9,17 +9,17 @@ export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    if (user?.token) {
+    if (user?._id) {
       const newSocket = io(`${import.meta.env.VITE_BACKEND_URL}`, {
-        auth: {
-          token: user.token,
-        },
+        withCredentials: true,
       });
 
       setSocket(newSocket);
 
       return () => newSocket.disconnect();
     }
+
+    setSocket(null);
   }, [user]);
 
   return (

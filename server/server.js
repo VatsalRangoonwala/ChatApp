@@ -22,11 +22,17 @@ const server = http.createServer(app);
 export const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL,
+    credentials: true,
   },
 });
 
 // Middleware
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use("/api/auth", authRouter);
 app.use("/api/chat", chatRouter);

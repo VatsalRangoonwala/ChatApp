@@ -4,10 +4,21 @@ import Message from "../models/message.model.js";
 
 const onlineUsers = new Map(); // userId -> socketId
 
+const extractTokenFromCookie = (cookieHeader = "") => {
+  return cookieHeader
+    .split(";")
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith("token="))
+    ?.slice("token=".length);
+};
+
 const socketHandler = (io) => {
   io.use(async (socket, next) => {
     try {
-      const token = socket.handshake.auth.token;
+      const token =
+        socket.handshake.auth?.token ||
+        extractTokenFromCookie(socket.handshake.headers.cookie);
+
       if (!token) return next(new Error("No token"));
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);

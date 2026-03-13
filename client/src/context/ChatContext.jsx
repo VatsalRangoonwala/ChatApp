@@ -286,13 +286,17 @@ export const ChatProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem("user");
-    setUser(null);
-    setChats([]);
-    setMessages([]);
-    setActiveChat(null);
-    setUnread({});
-    toast.success("Logged out");
+    api
+      .post("/auth/logout")
+      .catch(() => null)
+      .finally(() => {
+        setUser(null);
+        setChats([]);
+        setMessages([]);
+        setActiveChat(null);
+        setUnread({});
+        toast.success("Logged out");
+      });
   };
 
   return (
