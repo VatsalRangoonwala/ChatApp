@@ -25,7 +25,7 @@ export default function ChatInput() {
 
   return (
     <div
-      className="relative border-t border-border bg-card p-3"
+      className="relative shrink-0 border-t border-border bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
     >
       {showSchedule && text.trim() && activeChat && (
         <ScheduleDialog
@@ -41,6 +41,7 @@ export default function ChatInput() {
         <input
           type="text"
           value={text}
+          enterKeyHint="send"
           onChange={(e) => {
             setText(e.target.value);
 
@@ -56,6 +57,11 @@ export default function ChatInput() {
             typingRef.current = setTimeout(() => {
               stopTyping(receiver._id);
             }, 800);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !isDisable()) {
+              submitHandler();
+            }
           }}
           placeholder="Type a message..."
           className="flex-1 rounded-lg bg-input px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"

@@ -14,7 +14,10 @@ function Sidebar() {
   const [users, setUsers] = useState([]);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const handleSelectChat = () => setShowSidebar(false);
+  const handleSelectChat = (chat) => {
+    openChat(chat);
+    setShowSidebar(false);
+  };
 
   useEffect(() => {
     api.get("/user").then(({ data }) => setUsers(data));
@@ -47,14 +50,15 @@ function Sidebar() {
   const startChat = async (userId) => {
     const { data } = await api.post("/chat", { userId });
     addChatIfNotExists(data);
+    setShowSidebar(false);
     openChat(data);
   };
 
   return (
-    <div onClick={handleSelectChat}
-      className={`${showSidebar ? "flex" : "hidden"} w-full flex-col md:flex md:w-80 lg:w-96`}
+    <div
+      className={`${showSidebar ? "flex" : "hidden"} min-h-0 w-full flex-col md:flex md:w-80 lg:w-96`}
     >
-      <aside className="flex h-full w-full flex-col border-r border-border bg-chat-sidebar">
+      <aside className="flex h-full min-h-0 w-full flex-col border-r border-border bg-chat-sidebar">
         {/* Header */}
         <div className="border-b border-border p-4">
           <h2 className="mb-3 text-lg font-semibold text-foreground">Chats</h2>
@@ -79,7 +83,7 @@ function Sidebar() {
         </div>
 
         {/* Contact List */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           {filteredChats.length === 0 ? (
             <p className="p-4 text-center text-sm text-muted-foreground">
               No chats or user found
@@ -95,7 +99,7 @@ function Sidebar() {
               return (
                 <div key={chat._id}>
                   <button
-                    onClick={() => openChat(chat)}
+                    onClick={() => handleSelectChat(chat)}
                     className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-secondary/50 ${
                       isActive ? "bg-secondary" : ""
                     }`}
