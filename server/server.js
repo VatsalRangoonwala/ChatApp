@@ -49,3 +49,8 @@ const PORT = process.env.PORT;
 server.listen(PORT, () => {
   console.log("Server running...");
 });
+
+// A simple route to keep the server awake
+app.get('/ping', (req, res) => {
+  res.status(200).send('Pounce Server is Awake!');
+});
