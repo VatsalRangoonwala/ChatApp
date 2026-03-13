@@ -9,19 +9,33 @@ import {
   subscribeToPush,
 } from "../utils/pushNotification.js";
 import { GoogleLogin } from "@react-oauth/google";
+import { validateEmail } from "../utils/helper.js";
 // import jwt_decode from "jwt-decode";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const submitHandler = async (e) => {
     try {
       e.preventDefault();
+      const newErrors = {};
+      if (!email) newErrors.email = "Email is required";
+      else if (!validateEmail(email)) newErrors.email = "Invalid email format";
+      if (!password) newErrors.password = "Password is required";
+      else if (password.length < 6)
+        newErrors.password = "Password must be at least 6 characters";
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
+      }
+      setErrors({});
       setLoading(true);
       const { data } = await api.post("/auth/login", { email, password });
       login(data);
@@ -94,6 +108,7 @@ export default function Login() {
               placeholder="alice@demo.com"
               className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
             />
+            {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
           </div>
 
           <div>
@@ -121,6 +136,7 @@ export default function Login() {
                 )}
               </button>
             </div>
+            {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password}</p>}
           </div>
 
           <div className="flex justify-end">

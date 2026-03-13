@@ -5,6 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { ArrowLeft, Eye, EyeOff, MessageSquare } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "../ui/InputOTP.jsx";
+import { validateEmail } from "../utils/helper.js";
 
 export default function Register() {
   const [name, setName] = useState("");
@@ -22,10 +23,21 @@ export default function Register() {
   const submitHandler = async (e) => {
     try {
       e.preventDefault();
-      setLoading(true);
-      if (password !== confirmPassword) {
-        return toast.error("Passwords don't match");
+      const newErrors = {};
+      if (!name.trim()) newErrors.name = "Name is required";
+      if (!email) newErrors.email = "Email is required";
+      else if (!validateEmail(email)) newErrors.email = "Invalid email format";
+      if (!password) newErrors.password = "Password is required";
+      else if (password.length < 6) newErrors.password = "Min 6 characters";
+      if (password !== confirmPassword)
+        newErrors.confirmPassword = "Passwords don't match";
+
+      if (Object.keys(newErrors).length > 0) {
+        setErrors(newErrors);
+        return;
       }
+      setErrors({});
+      setLoading(true);
       const { data } = await api.post("/auth/register", {
         name,
         email,
@@ -166,6 +178,7 @@ export default function Register() {
                   placeholder="Your name"
                   className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
+                {errors.name && <p className="mt-1 text-xs text-destructive">{errors.name}</p>}
               </div>
 
               <div>
@@ -180,6 +193,7 @@ export default function Register() {
                   placeholder="you@example.com"
                   className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
+                {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
               </div>
 
               <div>
@@ -207,6 +221,7 @@ export default function Register() {
                     )}
                   </button>
                 </div>
+                {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password}</p>}
               </div>
 
               <div>
@@ -221,6 +236,7 @@ export default function Register() {
                   placeholder="Repeat your password"
                   className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                 />
+                {errors.confirmPassword && <p className="mt-1 text-xs text-destructive">{errors.confirmPassword}</p>}
               </div>
 
               <button
