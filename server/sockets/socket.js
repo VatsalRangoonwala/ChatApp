@@ -57,7 +57,7 @@ const socketHandler = (io) => {
       }
     }
 
-    console.log("User connected:", userId);
+    // console.log("User connected:", userId);
 
     //  PRIVATE MESSAGE
     socket.on("send-message", async (data) => {
