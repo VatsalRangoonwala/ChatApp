@@ -17,6 +17,9 @@ dotenv.config();
 connectDB();
 
 const app = express();
+app.get("/ping", (req, res) => {
+  res.status(200).send("Pounce Server is Awake!");
+});
 const server = http.createServer(app);
 
 // Socket Setup
@@ -36,9 +39,6 @@ app.use(
 );
 app.use(helmet());
 app.use(express.json());
-app.get("/ping", (req, res) => {
-  res.status(200).send("Pounce Server is Awake!");
-});
 
 app.use("/api/auth", authRouter);
 app.use("/api/chat", chatRouter);
