@@ -56,6 +56,11 @@
 }
 
 @layer base {
+  :root {
+    --app-height: 100vh;
+    --keyboard-inset: 0px;
+  }
+
   html,
   body,
   #root {
@@ -95,6 +100,15 @@
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-muted-foreground);
   }
+}
+
+.chat-shell {
+  height: var(--app-height);
+  min-height: var(--app-height);
+}
+
+.chat-shell__content {
+  padding-bottom: var(--keyboard-inset);
 }
 
 /* 2. Theme Extensions (Animations) */

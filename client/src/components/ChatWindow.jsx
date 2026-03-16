@@ -131,7 +131,8 @@ export default function ChatWindow() {
     <div
       className={`${!showSidebar || activeChat ? "flex" : "hidden"} min-h-0 flex-1 flex-col overflow-hidden bg-background md:flex`}
     >
-      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3">
+      {/* header sction */}
+      <div className="z-20 flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3">
         <button
           onClick={handleBackToSidebar}
           className="rounded-lg p-1 text-muted-foreground hover:text-foreground md:hidden"
@@ -172,7 +173,7 @@ export default function ChatWindow() {
         </div>
         <ScheduledMessagesList />
       </div>
-
+          {/* message body  */}
       <div
         onScroll={handleScroll}
         ref={messagesContainerRef}
