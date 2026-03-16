@@ -36,6 +36,10 @@ app.use(
 );
 app.use(helmet());
 app.use(express.json());
+app.get("/ping", (req, res) => {
+  res.status(200).send("Pounce Server is Awake!");
+});
+
 app.use("/api/auth", authRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/message", msgRouter);
@@ -48,9 +52,4 @@ const PORT = process.env.PORT;
 
 server.listen(PORT, () => {
   console.log("Server running...");
-});
-
-// A simple route to keep the server awake
-app.get('/ping', (req, res) => {
-  res.status(200).send('Pounce Server is Awake!');
 });
