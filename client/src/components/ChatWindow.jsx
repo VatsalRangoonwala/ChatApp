@@ -129,9 +129,9 @@ export default function ChatWindow() {
 
   return (
     <div
-      className={`${!showSidebar || activeChat ? "flex" : "hidden"} min-h-0 flex-1 flex-col bg-background md:flex`}
+      className={`${!showSidebar || activeChat ? "flex" : "hidden"} min-h-0 flex-1 flex-col overflow-hidden bg-background md:flex`}
     >
-      <div className="flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3">
+      <div className="sticky top-0 z-20 flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3">
         <button
           onClick={handleBackToSidebar}
           className="rounded-lg p-1 text-muted-foreground hover:text-foreground md:hidden"
@@ -176,7 +176,7 @@ export default function ChatWindow() {
       <div
         onScroll={handleScroll}
         ref={messagesContainerRef}
-        className="chat-pattern flex-1 overflow-y-auto overscroll-contain py-4 min-h-0"
+        className="chat-pattern min-h-0 flex-1 overflow-y-auto overscroll-contain px-1 py-4 [overflow-anchor:none]"
       >
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">

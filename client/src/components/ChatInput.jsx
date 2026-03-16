@@ -25,7 +25,7 @@ export default function ChatInput() {
 
   return (
     <div
-      className="relative shrink-0 border-t border-border bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+      className="sticky bottom-0 z-20 shrink-0 border-t border-border bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
     >
       {showSchedule && text.trim() && activeChat && (
         <ScheduleDialog
