@@ -11,6 +11,38 @@ export const sendMessage = async (req, res) => {
     return res.status(400).json({ message: "Invalid data" });
   }
 
+  let scheduledMsg = await Message.findOne({
+    chatId: chatId,
+    text: text,
+    isScheduled: true,
+  });
+
+  if (scheduledMsg) {
+    console.log("here");
+    scheduledMsg.isScheduled = false;
+    scheduledMsg.scheduledAt = new Date();
+    await scheduledMsg.save();
+    await Chat.findByIdAndUpdate(chatId, {
+      lastMessage: scheduledMsg._id,
+    });
+    scheduledMsg = await scheduledMsg.populate("sender", "name email");
+    scheduledMsg = await scheduledMsg.populate("receiver", "name email");
+
+    const receiver = await User.findById(receiverId);
+    if (!receiver.isOnline && receiver.pushSubscription) {
+      const payload = JSON.stringify({
+        title: scheduledMsg.sender.name,
+        body: scheduledMsg.text,
+        chatId: scheduledMsg.chatId,
+      });
+
+      webpush
+        .sendNotification(receiver.pushSubscription, payload)
+        .catch(console.error);
+    }
+    return res.status(200).json(scheduledMsg);
+  }
+
   try {
     let message = await Message.create({
       chatId,

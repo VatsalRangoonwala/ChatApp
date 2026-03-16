@@ -66,6 +66,19 @@ export default function ChatWindow() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container || !isTyping) return;
+
+    if (isUserNearBottom()) {
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({
+          behavior: "smooth",
+        });
+      });
+    }
+  }, [isTyping]);
+
   const isUserNearBottom = () => {
     const container = messagesContainerRef.current;
     if (!container) return false;

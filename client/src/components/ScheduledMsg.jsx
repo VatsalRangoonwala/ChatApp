@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/Popover";
 import api from "../services/api";
 import { formatChatDate } from "../utils/formatDate";
 import { formatMessageTime } from "../utils/formatTime";
+import dayjs from "dayjs";
 
 export const ScheduleDialog = ({ text, onScheduled, onClose }) => {
   const { sendMessage, setScheduleTime, scheduleTime } = useChat();
@@ -49,7 +50,7 @@ export const ScheduleDialog = ({ text, onScheduled, onClose }) => {
         <input
           type="datetime-local"
           onChange={(e) => {
-            setScheduleTime(e.target.value);
+            setScheduleTime(dayjs(e.target.value).toISOString());
             setError("");
           }}
           className="w-full rounded-lg bg-input px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary scheme-dark"

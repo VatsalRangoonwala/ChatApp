@@ -280,6 +280,7 @@ export const ChatProvider = ({ children }) => {
   const sendScheduledNow = (msg) => {
     const sm = scheduledMessages.find((m) => m._id === msg._id);
     if (sm) {
+      console.log(sm);
       sendMessage(sm.text.trim());
       setScheduledMessages((prev) => prev.filter((m) => m._id !== sm._id));
     }
