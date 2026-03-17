@@ -25,8 +25,8 @@
     "mongoose": "^9.1.5",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
+    "nodemailer": "^8.0.2",
     "otp-generator": "^4.0.1",
-    "resend": "^6.9.4",
     "socket.io": "^4.8.3",
     "web-push": "^3.6.7"
   },
