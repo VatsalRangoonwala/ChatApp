@@ -61,18 +61,19 @@ export const registerUser = async (req, res) => {
       upperCaseAlphabets: false,
       specialChars: false,
     });
+
+    await sendEmail({
+      to: email,
+      subject: "Verify your email",
+      text: `Your OTP is: ${otp}. It expires in 5 minutes.`,
+    });
+
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       emailOTP: otp,
       emailOTPExpire: Date.now() + 5 * 60 * 1000,
-    });
-
-    await sendEmail({
-      to: email,
-      subject: "Verify your email",
-      text: `Your OTP is: ${otp}. It expires in 5 minutes.`,
     });
 
     res.status(201).json({
