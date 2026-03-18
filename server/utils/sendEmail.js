@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
   family: 4,
 });
 
-const sendEmail = async ({ to, subject, text }) => {
+const sendEmail = async ({ to, subject, html }) => {
   await transporter
     .verify()
     .then(() => console.log("SMTP Ready"))
@@ -25,7 +25,7 @@ const sendEmail = async ({ to, subject, text }) => {
     from: process.env.EMAIL_USER,
     to,
     subject,
-    text,
+    html,
   });
 };
 

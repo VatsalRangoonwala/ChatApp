@@ -3,7 +3,7 @@ import api from "../services/api.js";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, MessageSquare } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import {
   requestNotificationPermission,
   subscribeToPush,
@@ -65,7 +65,7 @@ export default function Login() {
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-2">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/20">
-            <MessageSquare className="h-7 w-7 text-primary" />
+            <img src="/con.png" alt="logo" className="h-10 w-10" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
           <p className="text-sm text-muted-foreground">
@@ -108,7 +108,9 @@ export default function Login() {
               placeholder="alice@demo.com"
               className="w-full rounded-lg border border-border bg-input px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
             />
-            {errors.email && <p className="mt-1 text-xs text-destructive">{errors.email}</p>}
+            {errors.email && (
+              <p className="mt-1 text-xs text-destructive">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -136,7 +138,9 @@ export default function Login() {
                 )}
               </button>
             </div>
-            {errors.password && <p className="mt-1 text-xs text-destructive">{errors.password}</p>}
+            {errors.password && (
+              <p className="mt-1 text-xs text-destructive">{errors.password}</p>
+            )}
           </div>
 
           <div className="flex justify-end">
