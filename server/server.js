@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import http from "http";
 import helmet from "helmet";
+import compression from "compression";
 import { Server } from "socket.io";
 
 import connectDB from "./config/db.js";
@@ -38,6 +39,7 @@ app.use(
   }),
 );
 app.use(helmet());
+app.use(compression());
 app.use(express.json());
 
 app.use("/api/auth", authRouter);
