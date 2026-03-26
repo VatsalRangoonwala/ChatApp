@@ -8,10 +8,6 @@ export default function Chat() {
 
   useEffect(() => {
     const root = document.documentElement;
-    const body = document.body;
-
-    root.classList.add("chat-page");
-    body.classList.add("chat-page");
 
     const updateViewportMetrics = () => {
       const visualViewport = window.visualViewport;
@@ -50,8 +46,6 @@ export default function Chat() {
       window.removeEventListener("orientationchange", updateViewportMetrics);
       window.visualViewport?.removeEventListener("resize", updateViewportMetrics);
       window.visualViewport?.removeEventListener("scroll", updateViewportMetrics);
-      root.classList.remove("chat-page");
-      body.classList.remove("chat-page");
       root.style.removeProperty("--app-height");
       root.style.removeProperty("--keyboard-inset");
     };

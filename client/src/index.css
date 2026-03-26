@@ -82,7 +82,7 @@
     font-family: 'Inter', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overscroll-behavior: none;
+    overflow-x: hidden;
     overflow-y: auto;
   }
 
@@ -100,11 +100,6 @@
   ::-webkit-scrollbar-thumb:hover {
     background: var(--color-muted-foreground);
   }
-}
-
-html.chat-page,
-body.chat-page {
-  overflow: hidden;
 }
 
 .chat-shell {
