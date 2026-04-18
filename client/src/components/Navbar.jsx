@@ -19,7 +19,7 @@ export const Navbar = () => {
         onClick={() => navigate("/")}
         className="flex items-center gap-2 text-primary font-semibold text-lg hover:opacity-80 transition-opacity"
       >
-        <img src="/con.png" alt="logo" className="h-6 w-6" />
+        <img src="/_icon_.png" alt="logo" className="h-6 w-6" />
         <span className="hidden sm:inline">Pounce</span>
       </button>
 

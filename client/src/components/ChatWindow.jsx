@@ -129,7 +129,7 @@ export default function ChatWindow() {
       <div className="hidden flex-1 items-center justify-center md:flex">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-            <img src="/con.png" alt="logo" className="w-10 h-10" />
+            <img src="/_icon_.png" alt="logo" className="w-10 h-10" />
           </div>
           <h3 className="text-lg font-semibold text-foreground">Pounce</h3>
           <p className="max-w-xs text-sm text-muted-foreground">
