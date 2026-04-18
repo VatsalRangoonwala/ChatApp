@@ -1,5 +1,4 @@
 self.addEventListener("push", function(event) {
-
   const data = event.data.json();
 
   const options = {
@@ -20,9 +19,7 @@ self.addEventListener("push", function(event) {
 self.addEventListener("notificationclick", function (event) {
   event.notification.close();
 
-  const chatId = event.notification.data.chatId;
-
   event.waitUntil(
-    clients.openWindow("/")
+    self.clients.openWindow("/")
   );
 });

@@ -3,6 +3,7 @@ import toast from "react-hot-toast";
 import api from "../services/api";
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { validateEmail } from "../utils/helper";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -111,10 +112,6 @@ const ForgotPassword = () => {
       </div>
     </div>
   );
-};
-
-export const validateEmail = (email) => {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
 export default ForgotPassword;

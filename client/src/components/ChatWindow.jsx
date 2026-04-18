@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { useChat } from "../context/ChatContext";
+import { ArrowLeft } from "lucide-react";
+
 import { useAuth } from "../context/AuthContext";
+import { useChat } from "../context/ChatContext";
 import { useSocket } from "../context/SocketContext";
 import { formatChatDate } from "../utils/formatDate.js";
-import MessageBubble from "./MessageBubble";
-import ChatInput from "./ChatInput";
-import ProfileViewer from "./ProfileViewer.jsx";
 import { formatMessageTime } from "../utils/formatTime.js";
-import { ArrowLeft } from "lucide-react";
+import ChatInput from "./ChatInput";
+import MessageBubble from "./MessageBubble";
+import ProfileViewer from "./ProfileViewer.jsx";
 import { ScheduledMessagesList } from "./ScheduledMsg.jsx";
 
 export default function ChatWindow() {
@@ -24,9 +25,19 @@ export default function ChatWindow() {
   } = useChat();
   const { user } = useAuth();
   const { socket } = useSocket();
-  const otherUser = activeChat?.participants?.find((p) => p._id !== user._id);
+  const otherUser = activeChat?.participants?.find((participant) => participant._id !== user._id);
   const isInitialLoad = useRef(true);
   const [viewProfile, setViewProfile] = useState(null);
+
+  function isUserNearBottom() {
+    const container = messagesContainerRef.current;
+    if (!container) return false;
+
+    const distanceFromBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight;
+
+    return distanceFromBottom < 100;
+  }
 
   useEffect(() => {
     isInitialLoad.current = true;
@@ -47,14 +58,13 @@ export default function ChatWindow() {
 
     const lastMessage = messages[messages.length - 1];
 
-    // auto scroll only if near bottom
     if (isUserNearBottom()) {
       messagesEndRef.current?.scrollIntoView({
         behavior: "smooth",
       });
 
-      // ✅ mark seen
       if (
+        socket &&
         lastMessage.sender._id !== user._id &&
         lastMessage.status !== "seen"
       ) {
@@ -64,7 +74,7 @@ export default function ChatWindow() {
         });
       }
     }
-  }, [messages]);
+  }, [messages, socket, user?._id]);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
@@ -79,16 +89,6 @@ export default function ChatWindow() {
     }
   }, [isTyping]);
 
-  const isUserNearBottom = () => {
-    const container = messagesContainerRef.current;
-    if (!container) return false;
-
-    const distanceFromBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight;
-
-    return distanceFromBottom < 100;
-  };
-
   const handleScroll = async () => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -96,12 +96,12 @@ export default function ChatWindow() {
     const distanceFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
 
-    if (distanceFromBottom == 0) {
-      messages.forEach((msg) => {
-        if (msg.sender._id !== user._id && msg.status !== "seen") {
+    if (distanceFromBottom === 0 && socket) {
+      messages.forEach((message) => {
+        if (message.sender._id !== user._id && message.status !== "seen") {
           socket.emit("message-seen", {
-            messageId: msg._id,
-            senderId: msg.sender._id,
+            messageId: message._id,
+            senderId: message.sender._id,
           });
         }
       });
@@ -129,7 +129,7 @@ export default function ChatWindow() {
       <div className="hidden flex-1 items-center justify-center md:flex">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-            <img src="/_icon_.png" alt="logo" className="w-10 h-10" />
+            <img src="/_icon_.png" alt="logo" className="h-10 w-10" />
           </div>
           <h3 className="text-lg font-semibold text-foreground">Pounce</h3>
           <p className="max-w-xs text-sm text-muted-foreground">
@@ -144,7 +144,6 @@ export default function ChatWindow() {
     <div
       className={`${!showSidebar || activeChat ? "flex" : "hidden"} min-h-0 flex-1 flex-col overflow-hidden bg-background md:flex`}
     >
-      {/* header sction */}
       <div className="z-20 flex shrink-0 items-center gap-3 border-b border-border bg-card px-4 py-3">
         <button
           onClick={handleBackToSidebar}
@@ -161,7 +160,7 @@ export default function ChatWindow() {
               otherUser.avatar ||
               "https://ui-avatars.com/api/?name=" + otherUser.name
             }
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary object-cover"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 object-cover text-sm font-semibold text-primary"
           />
 
           <span
@@ -175,7 +174,7 @@ export default function ChatWindow() {
             {otherUser.name}
           </h3>
           <p className="text-xs text-muted-foreground">
-            {isTyping === activeChat ? (
+            {isTyping ? (
               <span className="text-typing">typing...</span>
             ) : otherUser.isOnline ? (
               "Online"
@@ -186,7 +185,7 @@ export default function ChatWindow() {
         </div>
         <ScheduledMessagesList />
       </div>
-          {/* message body  */}
+
       <div
         onScroll={handleScroll}
         ref={messagesContainerRef}
@@ -194,33 +193,29 @@ export default function ChatWindow() {
       >
         {messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <p className="text-sm text-muted-foreground">
-              Start the conversation! 👋
-            </p>
+            <p className="text-sm text-muted-foreground">Start the conversation!</p>
           </div>
         ) : (
           <div>
-            {messages.map((msg, index) => {
-              const currentDate = formatChatDate(msg.createdAt);
-
+            {messages.map((message, index) => {
+              const currentDate = formatChatDate(message.createdAt);
               const previousDate =
                 index > 0
                   ? formatChatDate(messages[index - 1].createdAt)
                   : null;
-
               const showDateHeader = currentDate !== previousDate;
 
               return (
-                <div key={msg._id}>
+                <div key={message._id}>
                   {showDateHeader && (
-                    <div className="sticky top-0 z-10 flex justify-center my-3">
-                      <span className="bg-chat-received text-gray-400 text-xs px-3 py-1 rounded-full">
+                    <div className="sticky top-0 z-10 my-3 flex justify-center">
+                      <span className="rounded-full bg-chat-received px-3 py-1 text-xs text-gray-400">
                         {currentDate}
                       </span>
                     </div>
                   )}
 
-                  <MessageBubble message={msg} />
+                  <MessageBubble message={message} />
                 </div>
               );
             })}
@@ -241,7 +236,6 @@ export default function ChatWindow() {
         {viewProfile && (
           <ProfileViewer
             user={viewProfile}
-            open={!!otherUser}
             onClose={() => setViewProfile(null)}
           />
         )}

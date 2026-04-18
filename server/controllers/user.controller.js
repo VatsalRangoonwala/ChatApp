@@ -1,66 +1,108 @@
 import User from "../models/user.model.js";
-import cloudinary from "../utils/cloudinary.js";
-import { getPublicIdFromUrl } from "../utils/cloudinary.js";
+import cloudinary, {
+  assertCloudinaryConfigured,
+  getPublicIdFromUrl,
+} from "../utils/cloudinary.js";
+import AppError from "../utils/appError.js";
+import { trimString } from "../utils/validators.js";
+
+const serializeUser = (user) => ({
+  _id: user._id,
+  name: user.name,
+  email: user.email,
+  bio: user.bio,
+  avatar: user.avatar,
+  isOnline: user.isOnline,
+  updatedAt: user.updatedAt,
+});
+
+const bufferToDataUri = (file) => {
+  return `data:${file.mimetype};base64,${file.buffer.toString("base64")}`;
+};
 
 export const getUsers = async (req, res) => {
-  const users = await User.find({
-    _id: { $ne: req.user._id },
-  }).select("-password");
+  const search = trimString(req.query.search || "");
+  const limit = Math.min(Number(req.query.limit) || 50, 100);
 
-  res.json(users);
+  const query = {
+    _id: { $ne: req.user._id },
+  };
+
+  if (search) {
+    query.name = {
+      $regex: search,
+      $options: "i",
+    };
+  }
+
+  const users = await User.find(query)
+    .select("_id name email bio avatar isOnline updatedAt")
+    .sort({ updatedAt: -1 })
+    .limit(limit)
+    .lean();
+
+  return res.json(users);
 };
 
 export const updateProfile = async (req, res) => {
-  const { name, bio } = req.body;
+  const name = trimString(req.body.name || "");
+  const bio = trimString(req.body.bio || "");
+
+  if (name && name.length > 50) {
+    throw new AppError("Name cannot exceed 50 characters", 400);
+  }
+
+  if (bio.length > 160) {
+    throw new AppError("Bio cannot exceed 160 characters", 400);
+  }
 
   const user = await User.findById(req.user._id);
 
   if (!user) {
-    return res.status(404).json({ message: "User not found" });
+    throw new AppError("User not found", 404);
   }
 
   let avatarUrl = user.avatar;
 
   if (req.file) {
+    assertCloudinaryConfigured();
 
-  // ✅ delete old avatar if exists
-  if (user.avatar) {
-    const publicId = getPublicIdFromUrl(user.avatar);
-
-    if (publicId) {
-      await cloudinary.uploader.destroy(publicId);
+    if (user.avatar) {
+      const publicId = getPublicIdFromUrl(user.avatar);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
+      }
     }
+
+    const result = await cloudinary.uploader.upload(bufferToDataUri(req.file), {
+      folder: "avatars",
+    });
+
+    avatarUrl = result.secure_url;
   }
 
-  // ✅ upload new avatar
-  const result = await cloudinary.uploader.upload(
-    req.file.path,
-    {
-      folder: "avatars",
-    }
-  );
-
-  avatarUrl = result.secure_url;
-}
-
-
   user.name = name || user.name;
-  user.bio = bio || user.bio;
+  user.bio = req.body.bio !== undefined ? bio : user.bio;
   user.avatar = avatarUrl;
 
   const updatedUser = await user.save();
 
-  res.json(updatedUser);
+  return res.json({
+    success: true,
+    user: serializeUser(updatedUser),
+  });
 };
 
 export const savePushSubscription = async (req, res) => {
+  const subscription = req.body.subscription;
 
-  const user = await User.findById(req.user._id);
+  if (!subscription?.endpoint || !subscription?.keys?.p256dh) {
+    throw new AppError("Invalid push subscription payload", 400);
+  }
 
-  user.pushSubscription = req.body.subscription;
+  await User.findByIdAndUpdate(req.user._id, {
+    pushSubscription: subscription,
+  });
 
-  await user.save();
-
-  res.json({ success: true });
-
+  return res.json({ success: true });
 };

@@ -1,65 +1,103 @@
+import mongoose from "mongoose";
+
 import Chat from "../models/chat.model.js";
 import Message from "../models/message.model.js";
+import User from "../models/user.model.js";
+import AppError from "../utils/appError.js";
+import { buildParticipantKey } from "../utils/chat.js";
+
+const participantSelection =
+  "_id name email bio avatar isOnline isVerified updatedAt";
 
 // Create or Get One-to-One Chat
 export const accessChat = async (req, res) => {
-  const { userId } = req.body;
+  const userId = String(req.body.userId || "");
 
-  if (!userId) {
-    return res.status(400).json({ message: "UserId required" });
+  if (!mongoose.isValidObjectId(userId)) {
+    throw new AppError("Valid userId is required", 400);
   }
 
-  try {
-    let chat = await Chat.findOne({
-      participants: {
-        $all: [req.user._id, userId],
-      },
-    }).populate("participants", "-password");
+  if (userId === req.user._id.toString()) {
+    throw new AppError("You cannot create a chat with yourself", 400);
+  }
 
-    if (chat) {
-      return res.json(chat);
+  const otherUser = await User.findById(userId).select("_id");
+  if (!otherUser) {
+    throw new AppError("User not found", 404);
+  }
+
+  const participantKey = buildParticipantKey(req.user._id, userId);
+
+  let chat = await Chat.findOne({
+    $or: [
+      { participantKey },
+      {
+        participants: {
+          $all: [req.user._id, userId],
+        },
+        $expr: {
+          $eq: [{ $size: "$participants" }, 2],
+        },
+      },
+    ],
+  }).populate("participants", participantSelection);
+
+  if (chat) {
+    if (!chat.participantKey) {
+      chat.participantKey = participantKey;
+      await chat.save();
     }
 
-    const newChat = await Chat.create({
-      participants: [req.user._id, userId],
-    });
-
-    const fullChat = await Chat.findById(newChat._id).populate(
-      "participants",
-      "-password",
-    );
-
-    res.status(201).json(fullChat);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    return res.json(chat);
   }
+
+  chat = await Chat.create({
+    participants: [req.user._id, userId],
+    participantKey,
+  });
+
+  const fullChat = await Chat.findById(chat._id).populate(
+    "participants",
+    participantSelection,
+  );
+
+  return res.status(201).json(fullChat);
 };
 
 // Fetch User Chats
 export const fetchChats = async (req, res) => {
-  try {
-    const unreadMessages = await Message.find({
-      receiver: req.user._id,
-      status: { $ne: "seen" },
-      deleted: false,
-      isScheduled: false,
-    }).select("chatId");
+  const unreadMessages = await Message.aggregate([
+    {
+      $match: {
+        receiver: req.user._id,
+        status: { $ne: "seen" },
+        deleted: false,
+        isScheduled: false,
+      },
+    },
+    {
+      $group: {
+        _id: "$chatId",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
 
-    const unreadMap = {};
+  const unreadMap = unreadMessages.reduce((accumulator, item) => {
+    accumulator[item._id.toString()] = item.count;
+    return accumulator;
+  }, {});
 
-    unreadMessages.forEach((msg) => {
-      unreadMap[msg.chatId] = (unreadMap[msg.chatId] || 0) + 1;
-    });
+  const chats = await Chat.find({
+    participants: req.user._id,
+  })
+    .populate("participants", participantSelection)
+    .populate(
+      "lastMessage",
+      "_id chatId sender receiver text image status edited deleted scheduledAt isScheduled createdAt updatedAt",
+    )
+    .sort({ updatedAt: -1 })
+    .lean();
 
-    const chats = await Chat.find({
-      participants: req.user._id,
-    })
-      .populate("participants", "-password")
-      .populate("lastMessage")
-      .sort({ updatedAt: -1 });
-
-    res.json({ chats, unreadMap });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  return res.json({ chats, unreadMap });
 };

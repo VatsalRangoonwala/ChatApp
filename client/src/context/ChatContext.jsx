@@ -1,10 +1,25 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import toast from "react-hot-toast";
+
 import api from "../services/api.js";
 import { useAuth } from "./AuthContext";
 import { useSocket } from "./SocketContext";
-import toast from "react-hot-toast";
 
 const ChatContext = createContext();
+
+const upsertMessage = (messages, nextMessage) => {
+  const existingIndex = messages.findIndex(
+    (message) => message._id === nextMessage._id,
+  );
+
+  if (existingIndex === -1) {
+    return [...messages, nextMessage];
+  }
+
+  return messages.map((message) =>
+    message._id === nextMessage._id ? nextMessage : message,
+  );
+};
 
 export const ChatProvider = ({ children }) => {
   const { user, setUser } = useAuth();
@@ -14,159 +29,238 @@ export const ChatProvider = ({ children }) => {
   const [activeChat, setActiveChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [scheduledMessages, setScheduledMessages] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
+  const [typingChatId, setTypingChatId] = useState(null);
   const [unread, setUnread] = useState({});
   const [page, setPage] = useState(1);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [scheduleTime, setScheduleTime] = useState(null);
 
-  // Fetch chats
+  const patchLastMessageAcrossChats = useCallback((message) => {
+    setChats((prevChats) =>
+      prevChats.map((chat) =>
+        chat.lastMessage?._id === message._id
+          ? { ...chat, lastMessage: message }
+          : chat,
+      ),
+    );
+  }, []);
+
+  const updateMessageLocal = useCallback((updatedMessage) => {
+    setMessages((prev) =>
+      prev.map((message) =>
+        message._id === updatedMessage._id ? updatedMessage : message,
+      ),
+    );
+    patchLastMessageAcrossChats(updatedMessage);
+  }, [patchLastMessageAcrossChats]);
+
+  const deleteMessageLocal = useCallback((deletedMessage) => {
+    setMessages((prev) =>
+      prev.map((message) =>
+        message._id === deletedMessage._id ? deletedMessage : message,
+      ),
+    );
+    patchLastMessageAcrossChats(deletedMessage);
+  }, [patchLastMessageAcrossChats]);
+
   useEffect(() => {
-    if (user) {
-      api.get("/chat").then(({ data }) => {
-        (setChats(data.chats), setUnread(data.unreadMap));
-      });
+    if (!user) {
+      return;
     }
+
+    const fetchChats = async () => {
+      try {
+        const { data } = await api.get("/chat");
+        setChats(data.chats);
+        setUnread(data.unreadMap);
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message || "Failed to fetch chats",
+        );
+      }
+    };
+
+    void fetchChats();
   }, [user]);
 
-  // Socket listeners
   useEffect(() => {
-    if (!socket) return;
+    if (!socket || !user?._id) {
+      return;
+    }
 
-    socket.on("user-online", (userId) => {
-      // update sidebar chats
+    const handleUserOnline = (userId) => {
       setChats((prev) =>
         prev.map((chat) => ({
           ...chat,
-          participants: chat.participants.map((p) =>
-            p._id === userId ? { ...p, isOnline: true } : p,
+          participants: chat.participants.map((participant) =>
+            participant._id === userId
+              ? { ...participant, isOnline: true, updatedAt: new Date().toISOString() }
+              : participant,
           ),
         })),
       );
 
-      // update active chat
       setActiveChat((prev) => {
         if (!prev) return prev;
 
         return {
           ...prev,
-          participants: prev.participants.map((p) =>
-            p._id === userId ? { ...p, isOnline: true } : p,
+          participants: prev.participants.map((participant) =>
+            participant._id === userId
+              ? { ...participant, isOnline: true, updatedAt: new Date().toISOString() }
+              : participant,
           ),
         };
       });
-    });
+    };
 
-    socket.on("receive-message", (message) => {
+    const handleUserOffline = (userId) => {
+      const timestamp = new Date().toISOString();
+
+      setChats((prev) =>
+        prev.map((chat) => ({
+          ...chat,
+          participants: chat.participants.map((participant) =>
+            participant._id === userId
+              ? { ...participant, isOnline: false, updatedAt: timestamp }
+              : participant,
+          ),
+        })),
+      );
+
+      setActiveChat((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          participants: prev.participants.map((participant) =>
+            participant._id === userId
+              ? { ...participant, isOnline: false, updatedAt: timestamp }
+              : participant,
+          ),
+        };
+      });
+    };
+
+    const handleReceiveMessage = (message) => {
       if (activeChat?._id === message.chatId) {
-        setMessages((prev) => [...prev, message]);
-      } else {
+        setMessages((prev) => upsertMessage(prev, message));
+      } else if (message.sender?._id !== user._id) {
         setUnread((prev) => ({
           ...prev,
           [message.chatId]: (prev[message.chatId] || 0) + 1,
         }));
       }
 
+      setTypingChatId((currentTypingChatId) =>
+        currentTypingChatId === message.chatId ? null : currentTypingChatId,
+      );
       setScheduledMessages((prev) =>
-        prev.filter((msg) => msg._id !== message._id),
+        prev.filter((scheduledMessage) => scheduledMessage._id !== message._id),
       );
 
       setChats((prevChats) => {
-        const chatIndex = prevChats.findIndex((c) => c._id === message.chatId);
+        const chatIndex = prevChats.findIndex(
+          (chat) => chat._id === message.chatId,
+        );
 
-        if (chatIndex === -1) return prevChats;
+        if (chatIndex === -1) {
+          return prevChats;
+        }
 
         const updatedChat = {
           ...prevChats[chatIndex],
           lastMessage: message,
-          updatedAt: message.createdAt,
+          updatedAt: message.updatedAt || message.createdAt,
         };
 
-        const remainingChats = prevChats.filter(
-          (c) => c._id !== message.chatId,
-        );
-        return [updatedChat, ...remainingChats];
+        return [
+          updatedChat,
+          ...prevChats.filter((chat) => chat._id !== message.chatId),
+        ];
       });
-    });
+    };
 
-    socket.on("typing", () => setIsTyping(true));
-    socket.on("stop-typing", () => setIsTyping(false));
+    const handleTyping = ({ chatId, senderId }) => {
+      if (!chatId || senderId === user._id) {
+        return;
+      }
 
-    socket.on("message-delivered", ({ messageId }) => {
+      setTypingChatId(chatId);
+    };
+
+    const handleStopTyping = ({ chatId, senderId }) => {
+      if (!chatId || senderId === user._id) {
+        return;
+      }
+
+      setTypingChatId((currentTypingChatId) =>
+        currentTypingChatId === chatId ? null : currentTypingChatId,
+      );
+    };
+
+    const handleDelivered = ({ messageId }) => {
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === messageId ? { ...msg, status: "delivered" } : msg,
+        prev.map((message) =>
+          message._id === messageId
+            ? { ...message, status: "delivered" }
+            : message,
         ),
       );
-    });
+    };
 
-    socket.on("message-updated", (updatedMessage) => {
-      updateMessageLocal(updatedMessage);
-    });
-
-    socket.on("message-deleted", (deletedMessage) => {
-      deleteMessageLocal(deletedMessage);
-    });
-
-    socket.on("message-seen", ({ messageId }) => {
+    const handleSeen = ({ messageId }) => {
       setMessages((prev) =>
-        prev.map((msg) =>
-          msg._id === messageId ? { ...msg, status: "seen" } : msg,
+        prev.map((message) =>
+          message._id === messageId ? { ...message, status: "seen" } : message,
         ),
       );
-    });
+    };
 
-    socket.on("user-offline", (userId) => {
-      setChats((prev) =>
-        prev.map((chat) => ({
-          ...chat,
-          participants: chat.participants.map((p) =>
-            p._id === userId ? { ...p, isOnline: false } : p,
-          ),
-        })),
-      );
-
-      setActiveChat((prev) => {
-        if (!prev) return prev;
-
-        return {
-          ...prev,
-          participants: prev.participants.map((p) =>
-            p._id === userId ? { ...p, isOnline: false } : p,
-          ),
-        };
-      });
-    });
+    socket.on("user-online", handleUserOnline);
+    socket.on("user-offline", handleUserOffline);
+    socket.on("receive-message", handleReceiveMessage);
+    socket.on("typing", handleTyping);
+    socket.on("stop-typing", handleStopTyping);
+    socket.on("message-delivered", handleDelivered);
+    socket.on("message-updated", updateMessageLocal);
+    socket.on("message-deleted", deleteMessageLocal);
+    socket.on("message-seen", handleSeen);
 
     return () => {
-      socket.off("typing");
-      socket.off("stop-typing");
-      socket.off("receive-message");
-      socket.off("message-delivered");
-      socket.off("message-updated");
-      socket.off("message-deleted");
-      socket.off("user-online");
-      socket.off("user-offline");
+      socket.off("user-online", handleUserOnline);
+      socket.off("user-offline", handleUserOffline);
+      socket.off("receive-message", handleReceiveMessage);
+      socket.off("typing", handleTyping);
+      socket.off("stop-typing", handleStopTyping);
+      socket.off("message-delivered", handleDelivered);
+      socket.off("message-updated", updateMessageLocal);
+      socket.off("message-deleted", deleteMessageLocal);
+      socket.off("message-seen", handleSeen);
     };
-  }, [socket, activeChat]);
+  }, [socket, activeChat?._id, user?._id, deleteMessageLocal, updateMessageLocal]);
 
-  // Fetch messages
   const openChat = async (chat) => {
     setActiveChat(chat);
     setPage(1);
+    setTypingChatId(null);
+
     const { data } = await api.get(`/message/${chat._id}`);
     setMessages(data);
-    const scheduled = data.filter((msg) => msg.isScheduled);
-    setScheduledMessages(scheduled);
-    data.forEach((msg) => {
-      if (msg.sender._id !== user._id && msg.status !== "seen") {
-        socket.emit("message-seen", {
-          messageId: msg._id,
-          senderId: msg.sender._id,
-        });
-      }
-    });
+    setScheduledMessages(data.filter((message) => message.isScheduled));
+
+    if (socket) {
+      data.forEach((message) => {
+        if (message.sender._id !== user._id && message.status !== "seen") {
+          socket.emit("message-seen", {
+            messageId: message._id,
+            senderId: message.sender._id,
+          });
+        }
+      });
+    }
+
     setUnread((prev) => ({
       ...prev,
       [chat._id]: 0,
@@ -178,111 +272,115 @@ export const ChatProvider = ({ children }) => {
 
     setLoadingOlder(true);
 
-    const nextPage = page + 1;
+    try {
+      const nextPage = page + 1;
+      const { data } = await api.get(`/message/${activeChat._id}?page=${nextPage}`);
 
-    const { data } = await api.get(
-      `/message/${activeChat._id}?page=${nextPage}`,
-    );
-
-    if (data.length > 0) {
-      setMessages((prev) => [...data, ...prev]);
-      setPage(nextPage);
+      if (data.length > 0) {
+        setMessages((prev) => [...data, ...prev]);
+        setPage(nextPage);
+      }
+    } finally {
+      setLoadingOlder(false);
     }
-
-    setLoadingOlder(false);
   };
 
-  // Send message
   const sendMessage = async (text) => {
     if (!text || !activeChat) return;
-    const receiver = activeChat.participants.find((p) => p._id !== user._id);
+
+    const receiver = activeChat.participants.find(
+      (participant) => participant._id !== user._id,
+    );
 
     const { data } = await api.post("/message", {
       chatId: activeChat._id,
       receiverId: receiver._id,
-      text: text,
+      text,
       scheduledAt: scheduleTime || null,
     });
 
     if (scheduleTime) {
       setScheduledMessages((prev) => [...prev, data]);
     } else {
-      setMessages((prev) => [...prev, data]);
-
+      setMessages((prev) => upsertMessage(prev, data));
       setChats((prevChats) => {
-        const chatIndex = prevChats.findIndex((c) => c._id === data.chatId);
+        const chatIndex = prevChats.findIndex((chat) => chat._id === data.chatId);
 
-        if (chatIndex === -1) return prevChats;
+        if (chatIndex === -1) {
+          return prevChats;
+        }
 
         const updatedChat = {
           ...prevChats[chatIndex],
           lastMessage: data,
-          updatedAt: data.createdAt,
+          updatedAt: data.updatedAt || data.createdAt,
         };
 
-        const remainingChats = prevChats.filter((c) => c._id !== data.chatId);
-
-        return [updatedChat, ...remainingChats];
+        return [updatedChat, ...prevChats.filter((chat) => chat._id !== data.chatId)];
       });
     }
-    socket.emit("send-message", {
-      receiverId: receiver._id,
-      message: data,
-    });
 
     setScheduleTime(null);
+    setTypingChatId(null);
   };
 
-  // Expose typing emitters
-
   const startTyping = (receiverId) => {
-    socket.emit("typing", { receiverId });
+    if (!socket || !activeChat?._id) {
+      return;
+    }
+
+    socket.emit("typing", {
+      receiverId,
+      chatId: activeChat._id,
+    });
   };
 
   const stopTyping = (receiverId) => {
-    socket.emit("stop-typing", { receiverId });
+    if (!socket || !activeChat?._id) {
+      return;
+    }
+
+    socket.emit("stop-typing", {
+      receiverId,
+      chatId: activeChat._id,
+    });
   };
 
   const addChatIfNotExists = (chat) => {
     setChats((prev) => {
-      const exists = prev.find((c) => c._id === chat._id);
-      if (exists) return prev;
+      const existingChat = prev.find((item) => item._id === chat._id);
+      if (existingChat) {
+        return prev.map((item) => (item._id === chat._id ? chat : item));
+      }
+
       return [chat, ...prev];
     });
   };
 
-  const updateMessageLocal = (updatedMessage) => {
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg._id === updatedMessage._id ? updatedMessage : msg,
-      ),
-    );
-  };
-
-  const deleteMessageLocal = (deletedMessage) => {
-    setMessages((prev) =>
-      prev.map((msg) =>
-        msg._id === deletedMessage._id ? deletedMessage : msg,
-      ),
-    );
-  };
-
-  const deleteScheduledMessage = async (msg) => {
+  const deleteScheduledMessage = async (message) => {
     try {
-      const res = await api.delete(`/message/delete/schedule/${msg._id}`);
-      toast.success(res.data.message);
-      setScheduledMessages((prev) => prev.filter((m) => m._id !== msg._id));
+      const response = await api.delete(`/message/delete/schedule/${message._id}`);
+      toast.success(response.data.message);
+      setScheduledMessages((prev) =>
+        prev.filter((item) => item._id !== message._id),
+      );
     } catch (error) {
-      toast.error(err.response?.data?.message || "Delete failed");
+      toast.error(error.response?.data?.message || "Delete failed");
     }
   };
 
-  const sendScheduledNow = (msg) => {
-    const sm = scheduledMessages.find((m) => m._id === msg._id);
-    if (sm) {
-      console.log(sm);
-      sendMessage(sm.text.trim());
-      setScheduledMessages((prev) => prev.filter((m) => m._id !== sm._id));
+  const sendScheduledNow = async (message) => {
+    try {
+      const { data } = await api.post(`/message/schedule/${message._id}/send-now`);
+      setScheduledMessages((prev) =>
+        prev.filter((item) => item._id !== message._id),
+      );
+
+      if (activeChat?._id === data.chatId) {
+        setMessages((prev) => upsertMessage(prev, data));
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to send message");
     }
   };
 
@@ -294,8 +392,10 @@ export const ChatProvider = ({ children }) => {
         setUser(null);
         setChats([]);
         setMessages([]);
+        setScheduledMessages([]);
         setActiveChat(null);
         setUnread({});
+        setTypingChatId(null);
         toast.success("Logged out");
       });
   };
@@ -309,7 +409,8 @@ export const ChatProvider = ({ children }) => {
         activeChat,
         setActiveChat,
         messages,
-        isTyping,
+        typingChatId,
+        isTyping: typingChatId === activeChat?._id,
         unread,
         scheduleTime,
         setScheduleTime,

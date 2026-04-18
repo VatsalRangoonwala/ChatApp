@@ -54,6 +54,11 @@ const messageSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+messageSchema.index({ chatId: 1, createdAt: -1 });
+messageSchema.index({ receiver: 1, status: 1, deleted: 1, isScheduled: 1 });
+messageSchema.index({ sender: 1, isScheduled: 1, scheduledAt: 1 });
+messageSchema.index({ isScheduled: 1, scheduledAt: 1 });
+
 const Message = mongoose.model("Message", messageSchema);
 
 export default Message;

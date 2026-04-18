@@ -83,11 +83,6 @@ Thumbs.db
 .env.test.local
 .env.production.local
 
-client/package-lock.json
-server/package-lock.json
-package-lock.json
-
-
 # Logs
 logs
 *.log

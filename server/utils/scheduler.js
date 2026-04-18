@@ -1,35 +1,72 @@
 import cron from "node-cron";
-import Message from "../models/message.model.js";
-import { io } from "../server.js";
+
 import Chat from "../models/chat.model.js";
-import { getSocketId } from "../sockets/socket.js";
+import Message from "../models/message.model.js";
+import { getUserRoom, isUserOnline } from "../sockets/socket.js";
+import { sendPushNotification } from "./webPush.js";
+import { logger } from "./logger.js";
 
-cron.schedule("*/10 * * * * *", async () => {
-  const now = new Date();
+const SCHEDULE_BATCH_SIZE = 25;
+const SENDER_SELECTION = "_id name email avatar";
+const RECEIVER_SELECTION = "_id name email avatar pushSubscription";
 
-  const msg = await Message.findOne({
-    isScheduled: true,
-    scheduledAt: { $lte: now },
-  }).populate("sender receiver");
+const processScheduledMessages = async (io) => {
+  let processed = 0;
 
-  if (msg) {
-    msg.isScheduled = false;
-    if (msg.receiver?.isOnline) {
-      msg.status = "delivered";
-    } else {
-      msg.status = "sent";
+  while (processed < SCHEDULE_BATCH_SIZE) {
+    const message = await Message.findOneAndUpdate(
+      {
+        isScheduled: true,
+        scheduledAt: { $lte: new Date() },
+      },
+      {
+        $set: { isScheduled: false },
+      },
+      {
+        sort: { scheduledAt: 1 },
+        returnDocument: "after",
+      },
+    )
+      .populate("sender", SENDER_SELECTION)
+      .populate("receiver", RECEIVER_SELECTION);
+
+    if (!message) {
+      break;
     }
 
-    await Chat.findByIdAndUpdate(msg.chatId, {
-      lastMessage: msg._id,
+    const receiverOnline = isUserOnline(message.receiver._id);
+    message.status = receiverOnline ? "delivered" : "sent";
+    await message.save();
+
+    await Chat.findByIdAndUpdate(message.chatId, {
+      lastMessage: message._id,
     });
 
-    await msg.save();
+    io.to(getUserRoom(message.sender._id)).emit("receive-message", message);
+    io.to(getUserRoom(message.receiver._id)).emit("receive-message", message);
 
-    // send realtime
-    const receiver = getSocketId(msg.receiver._id.toString());
-    const sender = getSocketId(msg.sender._id.toString());
-    io.to(sender).emit("receive-message", msg);
-    io.to(receiver).emit("receive-message", msg);
+    if (!receiverOnline && message.receiver.pushSubscription) {
+      const payload = JSON.stringify({
+        title: message.sender.name,
+        body: message.text,
+        chatId: message.chatId,
+      });
+
+      await sendPushNotification(message.receiver.pushSubscription, payload);
+    }
+
+    processed += 1;
   }
-});
+
+  if (processed > 0) {
+    logger.info("Processed scheduled messages", {
+      count: processed,
+    });
+  }
+};
+
+export const startScheduler = (io) => {
+  cron.schedule("*/5 * * * * *", () => {
+    void processScheduledMessages(io);
+  });
+};

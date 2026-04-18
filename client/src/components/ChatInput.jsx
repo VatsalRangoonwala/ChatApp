@@ -1,7 +1,8 @@
-import { useRef, useState } from "react";
-import { useChat } from "../context/ChatContext";
-import { useAuth } from "../context/AuthContext";
+import { useEffect, useRef, useState } from "react";
 import { Clock, Send } from "lucide-react";
+
+import { useAuth } from "../context/AuthContext";
+import { useChat } from "../context/ChatContext";
 import { ScheduleDialog } from "./ScheduledMsg";
 
 export default function ChatInput() {
@@ -10,23 +11,24 @@ export default function ChatInput() {
   const { sendMessage, activeChat, startTyping, stopTyping } = useChat();
   const typingRef = useRef(null);
   const { user } = useAuth();
-  const receiver = activeChat.participants.find((p) => p._id !== user._id);
+  const receiver = activeChat.participants.find((participant) => participant._id !== user._id);
 
   const submitHandler = () => {
+    if (!text.trim()) return;
+
     sendMessage(text.trim());
     setText("");
     stopTyping(receiver._id);
   };
 
-  const isDisable = () => {
-    if (text.trim().length > 1) return false;
-    else return true;
-  };
+  const isDisable = () => text.trim().length === 0;
+
+  useEffect(() => {
+    return () => clearTimeout(typingRef.current);
+  }, []);
 
   return (
-    <div
-      className="sticky bottom-0 z-20 shrink-0 border-t border-border bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
-    >
+    <div className="sticky bottom-0 z-20 shrink-0 border-t border-border bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
       {showSchedule && text.trim() && activeChat && (
         <ScheduleDialog
           text={text}
@@ -42,14 +44,10 @@ export default function ChatInput() {
           type="text"
           value={text}
           enterKeyHint="send"
-          onChange={(e) => {
-            setText(e.target.value);
+          onChange={(event) => {
+            setText(event.target.value);
 
-            const receiver = activeChat.participants.find(
-              (p) => p._id !== user._id,
-            );
-
-            if (e.target.value.trim().length > 0) {
+            if (event.target.value.trim().length > 0) {
               startTyping(receiver._id);
             }
 
@@ -58,8 +56,8 @@ export default function ChatInput() {
               stopTyping(receiver._id);
             }, 800);
           }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !isDisable()) {
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !isDisable()) {
               submitHandler();
             }
           }}
@@ -71,13 +69,13 @@ export default function ChatInput() {
             setShowSchedule(!showSchedule);
           }}
           disabled={!text.trim()}
-          className="rounded-lg p-2 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          className="rounded-lg p-2 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
           title="Schedule message"
         >
           <Clock className="h-5 w-5" />
         </button>
         <button
-          onClick={()=>submitHandler()}
+          onClick={() => submitHandler()}
           disabled={isDisable()}
           className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all hover:opacity-90 disabled:opacity-30"
         >

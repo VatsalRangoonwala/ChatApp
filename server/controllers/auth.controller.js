@@ -1,11 +1,17 @@
-import sendEmail from "../utils/sendEmail.js";
-import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
-import generateToken from "../utils/generateToken.js";
+import crypto from "crypto";
 import { OAuth2Client } from "google-auth-library";
 import otpGenerator from "otp-generator";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+import User from "../models/user.model.js";
+import sendEmail from "../utils/sendEmail.js";
+import generateToken from "../utils/generateToken.js";
+import AppError from "../utils/appError.js";
+import { isValidEmail, normalizeEmail, trimString } from "../utils/validators.js";
+
+const googleClient = process.env.GOOGLE_CLIENT_ID
+  ? new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
+  : null;
 
 const getCookieOptions = () => {
   const isProduction = process.env.NODE_ENV === "production";
@@ -25,6 +31,7 @@ const serializeUser = (user) => ({
   email: user.email,
   bio: user.bio,
   avatar: user.avatar,
+  isVerified: user.isVerified,
 });
 
 const sendAuthResponse = (res, user, statusCode = 200, message) => {
@@ -37,175 +44,223 @@ const sendAuthResponse = (res, user, statusCode = 200, message) => {
   });
 };
 
-// REGISTER
-export const registerUser = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
+const hashOtp = (otp) => {
+  return crypto.createHash("sha256").update(otp).digest("hex");
+};
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "All fields required" });
-    }
+const generateOtpPayload = () => {
+  const otp = otpGenerator.generate(6, {
+    digits: true,
+    lowerCaseAlphabets: false,
+    upperCaseAlphabets: false,
+    specialChars: false,
+  });
 
-    const userExists = await User.findOne({ email });
+  return {
+    otp,
+    otpHash: hashOtp(otp),
+    otpExpiresAt: new Date(Date.now() + 5 * 60 * 1000),
+  };
+};
 
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const otp = otpGenerator.generate(6, {
-      digits: true,
-      lowerCaseAlphabets: false,
-      upperCaseAlphabets: false,
-      specialChars: false,
-    });
-
-    await sendEmail({
-      to: email,
-      subject: "Verify your email",
-      html: `
-    <div style="font-family: sans-serif; max-width: 400px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
-      <h2 style="color: #333;">Verify your email</h2>
-      <p style="color: #666;">Use the code below to complete your verification. This code expires in <b>5 minutes</b>.</p>
-      <div style="background: #f4f4f4; padding: 20px; text-align: center; border-radius: 5px;">
-        <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #007bff;">${otp}</span>
+const sendVerificationEmail = async (email, otp) => {
+  await sendEmail({
+    to: email,
+    subject: "Verify your email",
+    html: `
+      <div style="font-family: sans-serif; max-width: 400px; margin: auto; border: 1px solid #eee; padding: 20px; border-radius: 10px;">
+        <h2 style="color: #333;">Verify your email</h2>
+        <p style="color: #666;">Use the code below to complete your verification. This code expires in <b>5 minutes</b>.</p>
+        <div style="background: #f4f4f4; padding: 20px; text-align: center; border-radius: 5px;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #007bff;">${otp}</span>
+        </div>
+        <p style="font-size: 12px; color: #999; margin-top: 20px;">If you didn't request this, you can safely ignore this email.</p>
       </div>
-      <p style="font-size: 12px; color: #999; margin-top: 20px;">If you didn't request this, you can safely ignore this email.</p>
-    </div>
-  `,
-    });
+    `,
+  });
+};
 
-    const user = await User.create({
+const sendPasswordResetEmail = async (email, resetUrl) => {
+  await sendEmail({
+    to: email,
+    subject: "Password Reset Request",
+    html: `
+      <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e1e1e1; border-radius: 8px;">
+        <h2 style="color: #1a1a1a; margin-bottom: 24px;">Reset your password</h2>
+        <p style="color: #4a4a4a; line-height: 1.5;">We received a request to reset your password. Click the button below to choose a new one. This link will expire shortly.</p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+            Reset Password
+          </a>
+        </div>
+        <p style="color: #888; font-size: 14px; line-height: 1.5;">
+          If you didn't mean to reset your password, you can safely ignore this email. Your password will not change until you access the link above and create a new one.
+        </p>
+      </div>
+    `,
+  });
+};
+
+export const registerUser = async (req, res) => {
+  const name = trimString(req.body.name);
+  const email = normalizeEmail(req.body.email);
+  const password = String(req.body.password || "");
+
+  if (!name || !email || !password) {
+    throw new AppError("All fields are required", 400);
+  }
+
+  if (!isValidEmail(email)) {
+    throw new AppError("Please enter a valid email address", 400);
+  }
+
+  if (password.length < 6) {
+    throw new AppError("Password must be at least 6 characters", 400);
+  }
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser?.isVerified) {
+    throw new AppError("User already exists", 409);
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const { otp, otpHash, otpExpiresAt } = generateOtpPayload();
+
+  let user = existingUser;
+
+  if (user) {
+    user.name = name;
+    user.password = passwordHash;
+    user.emailOTP = otpHash;
+    user.emailOTPExpire = otpExpiresAt;
+    await user.save();
+  } else {
+    user = await User.create({
       name,
       email,
-      password: hashedPassword,
-      emailOTP: otp,
-      emailOTPExpire: Date.now() + 5 * 60 * 1000,
+      password: passwordHash,
+      emailOTP: otpHash,
+      emailOTPExpire: otpExpiresAt,
     });
-
-    res.status(201).json({
-      success: true,
-      message: "OTP sent to email",
-      ...serializeUser(user),
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
+
+  await sendVerificationEmail(email, otp);
+
+  return res.status(existingUser ? 200 : 201).json({
+    success: true,
+    message: "OTP sent to email",
+    ...serializeUser(user),
+  });
 };
 
-// LOGIN
 export const loginUser = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  const email = normalizeEmail(req.body.email);
+  const password = String(req.body.password || "");
 
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return res.status(400).json({ message: "User not registered" });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
-
-    if (!user.isVerified) {
-      return res.status(403).json({
-        message: "Please verify your email first",
-      });
-    }
-
-    return sendAuthResponse(res, user, 200, "Logged in successfully");
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (!email || !password) {
+    throw new AppError("Email and password are required", 400);
   }
-};
-
-export const googleLogin = async (req, res) => {
-  try {
-    const { token } = req.body;
-
-    const ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-
-    const { email, name, picture } = payload;
-
-    let user = await User.findOne({ email });
-
-    if (!user) {
-      user = await User.create({
-        name,
-        email,
-        avatar: picture,
-        password: "google-auth",
-        isVerified: true,
-      });
-    }
-
-    return sendAuthResponse(res, user);
-  } catch (error) {
-    res.status(500).json({ message: "Google login failed" });
-  }
-};
-
-export const forgotPassword = async (req, res) => {
-  const { email } = req.body;
 
   const user = await User.findOne({ email });
 
   if (!user) {
-    return res.status(404).json({ message: "User not found" });
+    throw new AppError("Invalid credentials", 401);
   }
 
-  const resetToken = crypto.randomBytes(32).toString("hex");
+  const isMatch = await bcrypt.compare(password, user.password);
 
-  user.resetPasswordToken = crypto
-    .createHash("sha256")
-    .update(resetToken)
-    .digest("hex");
+  if (!isMatch) {
+    throw new AppError("Invalid credentials", 401);
+  }
 
-  user.resetPasswordExpire = Date.now() + 5 * 60 * 1000;
+  if (!user.isVerified) {
+    throw new AppError("Please verify your email first", 403);
+  }
 
-  await user.save();
+  return sendAuthResponse(res, user, 200, "Logged in successfully");
+};
 
-  const resetUrl = `${process.env.CLIENT_URL}/resetPassword/${resetToken}`;
+export const googleLogin = async (req, res) => {
+  if (!googleClient) {
+    throw new AppError("Google login is not configured", 500);
+  }
 
-  await sendEmail({
-    to: user.email,
-    subject: "Password Reset Request",
-    html: `
-    <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 500px; margin: auto; padding: 40px; border: 1px solid #e1e1e1; border-radius: 8px;">
-      <h2 style="color: #1a1a1a; margin-bottom: 24px;">Reset your password</h2>
-      <p style="color: #4a4a4a; line-height: 1.5;">We received a request to reset your password. Click the button below to choose a new one. This link will expire shortly.</p>
-      
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="${resetUrl}" style="background-color: #007bff; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
-          Reset Password
-        </a>
-      </div>
+  const token = trimString(req.body.token || "");
+  if (!token) {
+    throw new AppError("Google token is required", 400);
+  }
 
-      <p style="color: #888; font-size: 14px; line-height: 1.5;">
-        If you didn't mean to reset your password, you can safely ignore this email. Your password will not change until you access the link above and create a new one.
-      </p>
-      <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
-      <p style="color: #bbb; font-size: 12px;">
-        If you're having trouble clicking the button, copy and paste this URL into your browser:<br>
-        <span style="color: #007bff;">${resetUrl}</span>
-      </p>
-    </div>
-  `,
+  const ticket = await googleClient.verifyIdToken({
+    idToken: token,
+    audience: process.env.GOOGLE_CLIENT_ID,
   });
 
-  res.json({ message: "Reset email sent" });
+  const payload = ticket.getPayload();
+  const email = normalizeEmail(payload?.email);
+  const name = trimString(payload?.name || "Google User");
+
+  if (!payload?.email_verified || !email) {
+    throw new AppError("Google account email could not be verified", 400);
+  }
+
+  let user = await User.findOne({ email });
+
+  if (!user) {
+    user = await User.create({
+      name,
+      email,
+      avatar: payload.picture || "",
+      password: await bcrypt.hash(crypto.randomUUID(), 10),
+      isVerified: true,
+    });
+  } else if (!user.isVerified) {
+    user.isVerified = true;
+    if (!user.avatar && payload.picture) {
+      user.avatar = payload.picture;
+    }
+    await user.save();
+  }
+
+  return sendAuthResponse(res, user, 200, "Logged in successfully");
+};
+
+export const forgotPassword = async (req, res) => {
+  const email = normalizeEmail(req.body.email);
+
+  if (!email || !isValidEmail(email)) {
+    throw new AppError("Please enter a valid email address", 400);
+  }
+
+  const user = await User.findOne({ email });
+
+  if (user) {
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    user.resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(resetToken)
+      .digest("hex");
+    user.resetPasswordExpire = new Date(Date.now() + 5 * 60 * 1000);
+
+    await user.save();
+
+    const resetUrl = `${process.env.CLIENT_URL}/resetPassword/${resetToken}`;
+    await sendPasswordResetEmail(user.email, resetUrl);
+  }
+
+  return res.json({
+    success: true,
+    message: "If that email exists, a reset link has been sent",
+  });
 };
 
 export const resetPassword = async (req, res) => {
+  const password = String(req.body.password || "");
+
+  if (password.length < 6) {
+    throw new AppError("Password must be at least 6 characters", 400);
+  }
+
   const token = crypto
     .createHash("sha256")
     .update(req.params.token)
@@ -213,48 +268,49 @@ export const resetPassword = async (req, res) => {
 
   const user = await User.findOne({
     resetPasswordToken: token,
-    resetPasswordExpire: { $gt: Date.now() },
+    resetPasswordExpire: { $gt: new Date() },
   });
 
   if (!user) {
-    return res.status(400).json({ message: "Token invalid or expired" });
+    throw new AppError("Token invalid or expired", 400);
   }
 
-  const password = req.body.password;
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  user.password = hashedPassword;
-
+  user.password = await bcrypt.hash(password, 10);
   user.resetPasswordToken = undefined;
   user.resetPasswordExpire = undefined;
 
   await user.save();
 
-  res.json({ message: "Password updated successfully" });
+  return res.json({
+    success: true,
+    message: "Password updated successfully",
+  });
 };
 
 export const verifyEmailOTP = async (req, res) => {
-  const { email, otp } = req.body;
+  const email = normalizeEmail(req.body.email);
+  const otp = trimString(req.body.otp || "");
 
-  const user = await User.findOne({ email: email });
+  if (!email || !otp) {
+    throw new AppError("Email and OTP are required", 400);
+  }
+
+  const user = await User.findOne({ email });
 
   if (!user) {
-    return res.status(404).json({
-      message: "User not found",
-    });
+    throw new AppError("User not found", 404);
   }
 
-  if (user.emailOTP !== otp) {
-    return res.status(400).json({
-      message: "Invalid OTP",
-    });
+  if (user.isVerified) {
+    throw new AppError("Email is already verified", 400);
   }
 
-  if (user.emailOTPExpire < Date.now()) {
-    return res.status(400).json({
-      message: "OTP expired",
-    });
+  if (!user.emailOTP || !user.emailOTPExpire || user.emailOTPExpire < new Date()) {
+    throw new AppError("OTP expired", 400);
+  }
+
+  if (user.emailOTP !== hashOtp(otp)) {
+    throw new AppError("Invalid OTP", 400);
   }
 
   user.isVerified = true;
@@ -267,51 +323,38 @@ export const verifyEmailOTP = async (req, res) => {
 };
 
 export const resendOTP = async (req, res) => {
-  const { email } = req.body;
+  const email = normalizeEmail(req.body.email);
+
+  if (!email || !isValidEmail(email)) {
+    throw new AppError("Please enter a valid email address", 400);
+  }
 
   const user = await User.findOne({ email });
 
-  const otp = otpGenerator.generate(6, {
-    digits: true,
-    lowerCaseAlphabets: false,
-    upperCaseAlphabets: false,
-    specialChars: false,
-  });
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
 
-  user.emailOTP = otp;
-  user.emailOTPExpire = Date.now() + 10 * 60 * 1000;
+  if (user.isVerified) {
+    throw new AppError("Email is already verified", 400);
+  }
 
+  const { otp, otpHash, otpExpiresAt } = generateOtpPayload();
+
+  user.emailOTP = otpHash;
+  user.emailOTPExpire = otpExpiresAt;
   await user.save();
 
-  await sendEmail({
-    to: email,
-    subject: "Your New Verification Code",
-    html: `
-    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 450px; margin: 20px auto; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden;">
-      <div style="background-color: #1a1a1a; padding: 20px; text-align: center;">
-        <span style="color: #ffffff; font-size: 18px; font-weight: 600; letter-spacing: 1px;">VERIFICATION CODE</span>
-      </div>
-      <div style="padding: 40px 30px; text-align: center;">
-        <p style="color: #444; font-size: 16px; margin-bottom: 25px;">You requested a new code. Enter the following to continue:</p>
-        
-        <div style="background-color: #f8f9fa; border: 2px dashed #007bff; border-radius: 8px; padding: 20px; display: inline-block;">
-          <span style="font-family: monospace; font-size: 38px; font-weight: bold; color: #007bff; letter-spacing: 8px;">${otp}</span>
-        </div>
+  await sendVerificationEmail(email, otp);
 
-        <p style="color: #888; font-size: 13px; margin-top: 25px;">
-          Valid for <b>5 minutes</b>. <br />
-          If you didn't request this, please secure your account.
-        </p>
-      </div>
-    </div>
-  `,
+  return res.json({
+    success: true,
+    message: "OTP sent again",
   });
-
-  res.json({ message: "OTP sent again" });
 };
 
 export const getCurrentUser = async (req, res) => {
-  res.json({
+  return res.json({
     success: true,
     ...serializeUser(req.user),
   });
@@ -320,7 +363,7 @@ export const getCurrentUser = async (req, res) => {
 export const logoutUser = async (req, res) => {
   res.clearCookie("token", getCookieOptions());
 
-  res.json({
+  return res.json({
     success: true,
     message: "Logged out successfully",
   });

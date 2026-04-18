@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
-import User from "../models/user.model.js";
-import Message from "../models/message.model.js";
 
-const onlineUsers = new Map(); // userId -> socketId
+import Message from "../models/message.model.js";
+import User from "../models/user.model.js";
+import AppError from "../utils/appError.js";
+
+const onlineUsers = new Map(); // userId -> Set<socketId>
 
 const extractTokenFromCookie = (cookieHeader = "") => {
   return cookieHeader
@@ -12,6 +14,38 @@ const extractTokenFromCookie = (cookieHeader = "") => {
     ?.slice("token=".length);
 };
 
+const addSocketForUser = (userId, socketId) => {
+  const currentSockets = onlineUsers.get(userId) || new Set();
+  currentSockets.add(socketId);
+  onlineUsers.set(userId, currentSockets);
+  return currentSockets.size;
+};
+
+const removeSocketForUser = (userId, socketId) => {
+  const currentSockets = onlineUsers.get(userId);
+  if (!currentSockets) {
+    return 0;
+  }
+
+  currentSockets.delete(socketId);
+
+  if (currentSockets.size === 0) {
+    onlineUsers.delete(userId);
+    return 0;
+  }
+
+  onlineUsers.set(userId, currentSockets);
+  return currentSockets.size;
+};
+
+export const getUserRoom = (userId) => {
+  return `user:${userId.toString()}`;
+};
+
+export const isUserOnline = (userId) => {
+  return onlineUsers.has(userId.toString());
+};
+
 const socketHandler = (io) => {
   io.use(async (socket, next) => {
     try {
@@ -19,112 +53,107 @@ const socketHandler = (io) => {
         socket.handshake.auth?.token ||
         extractTokenFromCookie(socket.handshake.headers.cookie);
 
-      if (!token) return next(new Error("No token"));
+      if (!token) {
+        return next(new AppError("No token", 401));
+      }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       socket.userId = decoded.id;
 
-      next();
+      return next();
     } catch (error) {
-      next(new Error("Authentication error"));
+      return next(new AppError("Authentication error", 401));
     }
   });
 
   io.on("connection", async (socket) => {
-    const userId = socket.userId;
+    const userId = socket.userId.toString();
+    const connectionCount = addSocketForUser(userId, socket.id);
 
-    onlineUsers.set(userId, socket.id);
-    await User.findByIdAndUpdate(userId, { isOnline: true });
-    socket.broadcast.emit("user-online", userId);
+    socket.join(getUserRoom(userId));
 
-    // ✅ mark pending messages as delivered
+    if (connectionCount === 1) {
+      await User.findByIdAndUpdate(userId, { isOnline: true });
+      socket.broadcast.emit("user-online", userId);
+    }
+
     const undeliveredMessages = await Message.find({
       receiver: userId,
       status: "sent",
-    });
+      isScheduled: false,
+    }).select("_id sender");
 
-    for (const msg of undeliveredMessages) {
-      msg.status = "delivered";
-      await msg.save();
+    if (undeliveredMessages.length > 0) {
+      await Message.updateMany(
+        {
+          _id: { $in: undeliveredMessages.map((message) => message._id) },
+        },
+        {
+          $set: { status: "delivered" },
+        },
+      );
 
-      // notify sender if online
-      const senderSocketId = onlineUsers.get(msg.sender.toString());
-
-      if (senderSocketId) {
-        io.to(senderSocketId).emit("message-delivered", {
-          messageId: msg._id,
+      for (const message of undeliveredMessages) {
+        io.to(getUserRoom(message.sender)).emit("message-delivered", {
+          messageId: message._id,
         });
       }
     }
 
-    console.log("User connected:", userId);
-
-    //  PRIVATE MESSAGE
-    socket.on("send-message", async (data) => {
-      const { receiverId, message } = data;
-
-      const receiverSocketId = onlineUsers.get(receiverId);
-
-      if (receiverSocketId && !message.isScheduled) {
-        io.to(receiverSocketId).emit("receive-message", message);
-
-        await Message.findByIdAndUpdate(message._id, {
-          status: "delivered",
-        });
-
-        io.to(socket.id).emit("message-delivered", {
-          messageId: message._id,
-        });
+    socket.on("typing", ({ receiverId, chatId }) => {
+      if (!receiverId || !chatId) {
+        return;
       }
-    });
 
-    //  TYPING
-    socket.on("typing", ({ receiverId }) => {
-      const receiverSocketId = onlineUsers.get(receiverId);
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("typing");
-      }
-    });
-
-    socket.on("stop-typing", ({ receiverId }) => {
-      const receiverSocketId = onlineUsers.get(receiverId);
-      if (receiverSocketId) {
-        io.to(receiverSocketId).emit("stop-typing");
-      }
-    });
-
-    //UPDATE AND DELETE
-    socket.on("message-updated", (message) => {
-      io.to(message.chatId).emit("message-updated", message);
-    });
-
-    socket.on("message-deleted", (message) => {
-      io.to(message.chatId).emit("message-deleted", message);
-    });
-
-    //  SEEN
-    socket.on("message-seen", async ({ messageId, senderId }) => {
-      await Message.findByIdAndUpdate(messageId, {
-        status: "seen",
+      io.to(getUserRoom(receiverId)).emit("typing", {
+        senderId: userId,
+        chatId,
       });
+    });
 
-      const senderSocketId = onlineUsers.get(senderId);
-      if (senderSocketId) {
-        io.to(senderSocketId).emit("message-seen", { messageId });
+    socket.on("stop-typing", ({ receiverId, chatId }) => {
+      if (!receiverId || !chatId) {
+        return;
+      }
+
+      io.to(getUserRoom(receiverId)).emit("stop-typing", {
+        senderId: userId,
+        chatId,
+      });
+    });
+
+    socket.on("message-seen", async ({ messageId, senderId }) => {
+      if (!messageId || !senderId) {
+        return;
+      }
+
+      const message = await Message.findOneAndUpdate(
+        {
+          _id: messageId,
+          receiver: userId,
+        },
+        {
+          $set: { status: "seen" },
+        },
+        {
+          returnDocument: 'after',
+        },
+      ).select("_id");
+
+      if (message) {
+        io.to(getUserRoom(senderId)).emit("message-seen", { messageId });
       }
     });
 
     socket.on("disconnect", async () => {
-      onlineUsers.delete(userId);
-      await User.findByIdAndUpdate(userId, { isOnline: false });
-      socket.broadcast.emit("user-offline", userId);
-      console.log("User disconnected:", userId);
+      const remainingConnections = removeSocketForUser(userId, socket.id);
+
+      if (remainingConnections === 0) {
+        await User.findByIdAndUpdate(userId, { isOnline: false });
+        socket.broadcast.emit("user-offline", userId);
+      }
     });
   });
-};
-
-export const getSocketId = (userId) => {
-  return onlineUsers.get(userId);
 };
 
 export default socketHandler;
