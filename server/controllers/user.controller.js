@@ -74,7 +74,7 @@ export const updateProfile = async (req, res) => {
       }
     }
 
-    const result = await cloudinary.uploader.upload_large(bufferToDataUri(req.file), {
+    const result = await cloudinary.uploader.upload(bufferToDataUri(req.file), {
       folder: "avatars",
     });
 
