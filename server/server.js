@@ -11,6 +11,7 @@ import connectDB from "./config/db.js";
 import authRouter from "./routes/auth.route.js";
 import chatRouter from "./routes/chat.route.js";
 import { errorHandler, notFound } from "./middlewares/error.middleware.js";
+import { csrfProtect } from "./middlewares/csrf.middleware.js";
 import msgRouter from "./routes/message.route.js";
 import socketHandler from "./sockets/socket.js";
 import { logger } from "./utils/logger.js";
@@ -66,6 +67,7 @@ if (process.env.NODE_ENV === "production") {
 app.use(cors(corsOptions));
 app.use(helmet());
 app.use(compression());
+app.use(csrfProtect);
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 

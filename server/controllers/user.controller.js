@@ -4,7 +4,7 @@ import cloudinary, {
   getPublicIdFromUrl,
 } from "../utils/cloudinary.js";
 import AppError from "../utils/appError.js";
-import { trimString } from "../utils/validators.js";
+import { escapeRegex, trimString } from "../utils/validators.js";
 
 const serializeUser = (user) => ({
   _id: user._id,
@@ -21,7 +21,7 @@ const bufferToDataUri = (file) => {
 };
 
 export const getUsers = async (req, res) => {
-  const search = trimString(req.query.search || "");
+  const search = trimString(req.query.search);
   const limit = Math.min(Number(req.query.limit) || 50, 100);
 
   const query = {
@@ -30,7 +30,7 @@ export const getUsers = async (req, res) => {
 
   if (search) {
     query.name = {
-      $regex: search,
+      $regex: escapeRegex(search),
       $options: "i",
     };
   }

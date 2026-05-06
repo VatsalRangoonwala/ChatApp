@@ -32,7 +32,7 @@ authRouter.post("/register", authLimiter, registerUser);
 authRouter.post("/login", authLimiter, loginUser);
 authRouter.post("/google", authLimiter, googleLogin);
 authRouter.post("/forgotPassword", authLimiter, forgotPassword);
-authRouter.put("/resetPassword/:token", resetPassword);
+authRouter.put("/resetPassword/:token", authLimiter, resetPassword);
 authRouter.post("/verifyEmail", otpLimiter, verifyEmailOTP);
 authRouter.post("/resendOtp", otpLimiter, resendOTP);
 authRouter.get("/me", protect, getCurrentUser);

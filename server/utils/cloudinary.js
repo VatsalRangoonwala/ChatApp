@@ -22,15 +22,16 @@ if (isCloudinaryConfigured()) {
 
 
 export const getPublicIdFromUrl = (url) => {
-  if (!url) return null;
+  if (!url || typeof url !== "string") return null;
 
-  const parts = url.split("/");
-  const fileName = parts[parts.length - 1];
+  // Cloudinary URLs typically look like:
+  // https://res.cloudinary.com/cloud_name/image/upload/v12345678/folder/public_id.jpg
+  // This regex extracts 'folder/public_id' by looking for everything after the version (v[0-9]+)
+  // and before the last file extension.
+  const regex = /\/v\d+\/([^.]+)/;
+  const match = url.match(regex);
 
-  const publicId =
-    "avatars/" + fileName.split(".")[0];
-
-  return publicId;
+  return match ? match[1] : null;
 };
 
 export const assertCloudinaryConfigured = () => {
