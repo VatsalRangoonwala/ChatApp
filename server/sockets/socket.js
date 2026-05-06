@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 
+import Chat from "../models/chat.model.js";
 import Message from "../models/message.model.js";
 import User from "../models/user.model.js";
 import AppError from "../utils/appError.js";
@@ -100,43 +101,52 @@ const socketHandler = (io) => {
       }
     }
 
-    socket.on("typing", ({ receiverId, chatId }) => {
-      if (!receiverId || !chatId) {
-        return;
-      }
+    socket.on("typing", async ({ receiverId, chatId }) => {
+      if (!receiverId || !chatId) return;
 
-      io.to(getUserRoom(receiverId)).emit("typing", {
-        senderId: userId,
-        chatId,
-      });
+      const chat = await Chat.findOne({
+        _id: chatId,
+        participants: { $all: [userId, receiverId] },
+      }).select("_id");
+
+      if (chat) {
+        io.to(getUserRoom(receiverId)).emit("typing", {
+          senderId: userId,
+          chatId,
+        });
+      }
     });
 
-    socket.on("stop-typing", ({ receiverId, chatId }) => {
-      if (!receiverId || !chatId) {
-        return;
-      }
+    socket.on("stop-typing", async ({ receiverId, chatId }) => {
+      if (!receiverId || !chatId) return;
 
-      io.to(getUserRoom(receiverId)).emit("stop-typing", {
-        senderId: userId,
-        chatId,
-      });
+      const chat = await Chat.findOne({
+        _id: chatId,
+        participants: { $all: [userId, receiverId] },
+      }).select("_id");
+
+      if (chat) {
+        io.to(getUserRoom(receiverId)).emit("stop-typing", {
+          senderId: userId,
+          chatId,
+        });
+      }
     });
 
     socket.on("message-seen", async ({ messageId, senderId }) => {
-      if (!messageId || !senderId) {
-        return;
-      }
+      if (!messageId || !senderId) return;
 
       const message = await Message.findOneAndUpdate(
         {
           _id: messageId,
           receiver: userId,
+          sender: senderId,
         },
         {
           $set: { status: "seen" },
         },
         {
-          returnDocument: 'after',
+          returnDocument: "after",
         },
       ).select("_id");
 

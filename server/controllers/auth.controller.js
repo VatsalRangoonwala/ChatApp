@@ -114,13 +114,18 @@ export const registerUser = async (req, res) => {
     throw new AppError("Please enter a valid email address", 400);
   }
 
-  if (password.length < 6) {
-    throw new AppError("Password must be at least 6 characters", 400);
+  if (password.length < 8) {
+    throw new AppError("Password must be at least 8 characters", 400);
   }
 
   const existingUser = await User.findOne({ email });
+  
+  // Generic response even if user exists to prevent enumeration
   if (existingUser?.isVerified) {
-    throw new AppError("User already exists", 409);
+    return res.status(200).json({
+      success: true,
+      message: "If an account exists, an OTP has been sent to your email",
+    });
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
@@ -148,8 +153,7 @@ export const registerUser = async (req, res) => {
 
   return res.status(existingUser ? 200 : 201).json({
     success: true,
-    message: "OTP sent to email",
-    ...serializeUser(user),
+    message: "If an account exists, an OTP has been sent to your email",
   });
 };
 
@@ -257,13 +261,13 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   const password = String(req.body.password || "");
 
-  if (password.length < 6) {
-    throw new AppError("Password must be at least 6 characters", 400);
+  if (password.length < 8) {
+    throw new AppError("Password must be at least 8 characters", 400);
   }
 
   const token = crypto
     .createHash("sha256")
-    .update(req.params.token)
+    .update(trimString(req.params.token))
     .digest("hex");
 
   const user = await User.findOne({
@@ -289,7 +293,7 @@ export const resetPassword = async (req, res) => {
 
 export const verifyEmailOTP = async (req, res) => {
   const email = normalizeEmail(req.body.email);
-  const otp = trimString(req.body.otp || "");
+  const otp = trimString(req.body.otp);
 
   if (!email || !otp) {
     throw new AppError("Email and OTP are required", 400);
@@ -297,20 +301,16 @@ export const verifyEmailOTP = async (req, res) => {
 
   const user = await User.findOne({ email });
 
-  if (!user) {
-    throw new AppError("User not found", 404);
-  }
-
-  if (user.isVerified) {
-    throw new AppError("Email is already verified", 400);
+  if (!user || user.isVerified) {
+    throw new AppError("Invalid request or OTP expired", 400);
   }
 
   if (!user.emailOTP || !user.emailOTPExpire || user.emailOTPExpire < new Date()) {
-    throw new AppError("OTP expired", 400);
+    throw new AppError("Invalid request or OTP expired", 400);
   }
 
   if (user.emailOTP !== hashOtp(otp)) {
-    throw new AppError("Invalid OTP", 400);
+    throw new AppError("Invalid request or OTP expired", 400);
   }
 
   user.isVerified = true;
@@ -331,12 +331,11 @@ export const resendOTP = async (req, res) => {
 
   const user = await User.findOne({ email });
 
-  if (!user) {
-    throw new AppError("User not found", 404);
-  }
-
-  if (user.isVerified) {
-    throw new AppError("Email is already verified", 400);
+  if (!user || user.isVerified) {
+    return res.json({
+      success: true,
+      message: "If an account exists and is not verified, an OTP has been sent",
+    });
   }
 
   const { otp, otpHash, otpExpiresAt } = generateOtpPayload();
@@ -349,7 +348,7 @@ export const resendOTP = async (req, res) => {
 
   return res.json({
     success: true,
-    message: "OTP sent again",
+    message: "If an account exists and is not verified, an OTP has been sent",
   });
 };
 
