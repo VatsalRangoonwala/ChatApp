@@ -1,7 +1,8 @@
 import { useAuth } from "../context/AuthContext";
 import { useChat } from "../context/ChatContext";
 import { useNavigate, useLocation } from "react-router-dom";
-import { LogOut, MessageSquare, User } from "lucide-react";
+import { MessageSquare, User } from "lucide-react";
+import LogoutDialog from "./LogoutDialog";
 
 export const Navbar = () => {
   const { user } = useAuth();
@@ -46,16 +47,12 @@ export const Navbar = () => {
           <User className="h-4 w-4 sm:hidden" />
           <span className="hidden sm:inline">Profile</span>
         </button>
-        <button
-          onClick={() => {
+        <LogoutDialog
+          onConfirm={() => {
             logout();
             navigate("/login");
           }}
-          className="rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-        >
-          <LogOut className="h-4 w-4 sm:hidden" />
-          <span className="hidden sm:inline">Logout</span>
-        </button>
+        />
       </nav>
     </header>
   );
